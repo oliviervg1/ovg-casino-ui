@@ -123,7 +123,7 @@ Replace the entire file with:
     "@types/react-dom": "^19.2.3",
     "@types/supertest": "^6.0.2",
     "@vitejs/plugin-react": "^4.3.4",
-    "@vitest/coverage-v8": "^2.1.8",
+    "@vitest/coverage-v8": "^3.2.0",
     "autoprefixer": "^10.4.20",
     "jsdom": "^25.0.1",
     "supertest": "^7.0.0",
@@ -131,7 +131,7 @@ Replace the entire file with:
     "tsx": "^4.21.0",
     "typescript": "~5.6.3",
     "vite": "^5.4.11",
-    "vitest": "^2.1.8"
+    "vitest": "^3.2.0"
   }
 }
 ```
@@ -271,7 +271,14 @@ Expected: completes without errors. (Some peer-dep warnings are OK.)
 npm run lint
 ```
 
-Expected: client tsconfig passes (server tsconfig fails with "no inputs found" — that's fine, server/ doesn't exist yet). If you see anything else, stop and investigate.
+Expected at this stage:
+- Server tsconfig fails with "no inputs found" — fine, `server/` doesn't exist yet.
+- Client tsconfig fails with three known transitional errors:
+  - `src/firebase.ts(4,28): error TS2307: Cannot find module '../firebase-applet-config.json'` — fixed by Task 25.
+  - `src/lib/AssetManager.ts(2,37): error TS2307: Cannot find module 'idb-keyval'` — fixed by Task 14.
+  - `src/lib/MusicManager.ts(2,37): error TS2307: Cannot find module 'idb-keyval'` — fixed by Task 15.
+
+If you see *any other* TypeScript error, stop and investigate.
 
 - [ ] **Step 11: Commit**
 
