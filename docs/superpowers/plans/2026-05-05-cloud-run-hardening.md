@@ -189,7 +189,6 @@ export default defineConfig({
           environment: 'jsdom',
           include: ['src/**/*.test.{ts,tsx}'],
           globals: true,
-          setupFiles: ['./vitest.setup.ts'],
         },
       },
     ],
@@ -197,24 +196,17 @@ export default defineConfig({
 });
 ```
 
-- [ ] **Step 5: Create `vitest.setup.ts`** (empty placeholder for jsdom setup hooks)
+- [ ] **Step 5: Update `.gitignore`**
 
-```ts
-import '@testing-library/dom';
-```
-
-- [ ] **Step 6: Update `.gitignore`**
-
-Add these lines (preserve existing content):
+Add these lines (preserve existing content; `coverage/` is already there, don't duplicate):
 
 ```
 firebase-applet-config.json
 deploy/.env.deploy
 dist-server
-coverage
 ```
 
-- [ ] **Step 7: Rewrite `.env.example`**
+- [ ] **Step 6: Rewrite `.env.example`**
 
 ```bash
 # === Server (read by Express via process.env) ===
@@ -251,13 +243,13 @@ VITE_CES_CHAT_TITLE=
 VITE_CES_THEME_ID=
 ```
 
-- [ ] **Step 8: Delete dead Firebase Studio artifacts**
+- [ ] **Step 7: Delete dead Firebase Studio artifacts**
 
 ```bash
 git rm firebase-applet-config.json firebase-blueprint.json metadata.json
 ```
 
-- [ ] **Step 9: Install dependencies**
+- [ ] **Step 8: Install dependencies**
 
 ```bash
 npm install
@@ -265,7 +257,7 @@ npm install
 
 Expected: completes without errors. (Some peer-dep warnings are OK.)
 
-- [ ] **Step 10: Verify project lints**
+- [ ] **Step 9: Verify project lints**
 
 ```bash
 npm run lint
@@ -280,10 +272,10 @@ Expected at this stage:
 
 If you see *any other* TypeScript error, stop and investigate.
 
-- [ ] **Step 11: Commit**
+- [ ] **Step 10: Commit**
 
 ```bash
-git add package.json package-lock.json tsconfig.json tsconfig.server.json vitest.config.ts vitest.setup.ts .gitignore .env.example
+git add package.json package-lock.json tsconfig.json tsconfig.server.json vitest.config.ts .gitignore .env.example
 git rm firebase-applet-config.json firebase-blueprint.json metadata.json
 git commit -m "chore: Project setup for Cloud Run hardening — corrected deps, tsconfigs, vitest, dead-file cleanup"
 ```

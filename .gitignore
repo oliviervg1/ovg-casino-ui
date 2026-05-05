@@ -9,4 +9,3 @@ coverage/
 firebase-applet-config.json
 deploy/.env.deploy
 dist-server
-coverage
