@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Chewy&family=Cinzel:wght@400;700&family=Inter:wght@400;500;600;700&family=Righteous&family=Orbitron:wght@400;700&family=Pirata+One&family=Rye&family=Black+Ops+One&family=Pattaya&family=Bangers&family=Creepster&family=Shojumaru&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-theme-bg: var(--theme-bg);
+  --color-theme-card: var(--theme-card);
+  --color-theme-primary: var(--theme-primary);
+  --color-theme-secondary: var(--theme-secondary);
+  --color-theme-accent: var(--theme-accent);
+  --color-theme-text: var(--theme-text);
+  
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-casino: "Righteous", "Inter", sans-serif;
+  --font-sweets: "Chewy", "Inter", cursive;
+  --font-egypt: "Cinzel", "Inter", serif;
+  --font-space: "Orbitron", "Inter", sans-serif;
+  --font-west: "Rye", "Inter", cursive;
+  --font-ocean: "Pattaya", "Inter", sans-serif;
+  --font-jungle: "Bangers", "Inter", cursive;
+  --font-vampire: "Creepster", "Inter", cursive;
+  --font-ninja: "Shojumaru", "Inter", cursive;
+}
+
+@layer base {
+  :root {
+    /* Default fallback */
+    --theme-bg: #18181b;
+    --theme-bg-rgb: 24, 24, 27;
+    --theme-card: rgba(39, 39, 42, 0.85);
+    --theme-primary: #6366f1;
+    --theme-secondary: #8b5cf6;
+    --theme-accent: #ec4899;
+    --theme-text: #ffffff;
+    --bg-image: url('https://images.unsplash.com/photo-1596838132731-3301c3fd4317?q=80&w=2070&auto=format&fit=crop');
+  }
+
+  :root[data-theme="light"] {
+    --theme-bg: #fdf2f8; /* pink-50 */
+    --theme-bg-rgb: 253, 242, 248;
+    --theme-card: rgba(255, 255, 255, 0.85);
+    --theme-primary: #ec4899; /* pink-500 */
+    --theme-secondary: #d946ef; /* fuchsia-500 */
+    --theme-accent: #14b8a6; /* teal-500 */
+    --theme-text: #4c1d95; /* violet-900 */
+    --bg-image: url('https://images.unsplash.com/photo-1574226516831-e1dff420e507?q=80&w=2070&auto=format&fit=crop');
+  }
+
+  :root[data-theme="dark"] {
+    --theme-bg: #0f172a; /* slate-900 */
+    --theme-bg-rgb: 15, 23, 42;
+    --theme-card: rgba(30, 41, 59, 0.85);
+    --theme-primary: #eab308; /* yellow-500 */
+    --theme-secondary: #b45309; /* amber-700 */
+    --theme-accent: #0ea5e9; /* sky-500 */
+    --theme-text: #fef08a; /* yellow-200 */
+    --bg-image: url('https://images.unsplash.com/photo-1539667468225-eebb663053e6?q=80&w=2069&auto=format&fit=crop');
+  }
+
+  body {
+    background-color: var(--theme-bg);
+    background-image: linear-gradient(rgba(var(--theme-bg-rgb), 0.85), rgba(var(--theme-bg-rgb), 0.95)), var(--bg-image);
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    color: var(--theme-text);
+    transition: background-color 0.5s ease, color 0.5s ease;
+  }
+}
