@@ -36,20 +36,31 @@ Browser ──► Cloud Run (Express + React static)
               │
               ├── GET /healthz → 200
               │
-              └── GET /api/asset/:key
-                  GET /api/music/:theme/:gameType
+              ├── GET /api/asset/:key
+              │   GET /api/music/:theme/:gameType
+              │        │
+              │        ├── Helmet + CORS + rate-limit (per uid)
+              │        ├── verify Firebase ID token (firebase-admin)
+              │        ├── validate :key/:theme/:gameType against allow-list
+              │        ├── HEAD users/<uid>/<key>  → hit: sign URL → 200
+              │        ├── HEAD global/<key>       → hit: sign URL → 200
+              │        └── miss: per-key in-flight lock
+              │                 → call Gemini
+              │                 → upload to GCS global/ (immutable, content-type)
+              │                 → sign URL → 200 {url, expiresAt}
+              │
+              └── POST /api/asset/:key/regenerate
+                  POST /api/music/:theme/:gameType/regenerate
                        │
-                       ├── Helmet + CORS + rate-limit (per uid)
-                       ├── verify Firebase ID token (firebase-admin)
-                       ├── validate :key/:theme/:gameType against allow-list
-                       ├── HEAD GCS object → hit: sign URL → 200 {url, expiresAt}
-                       └── miss: per-key in-flight lock
-                                → call Gemini
-                                → upload to GCS (immutable, content-type)
-                                → sign URL → 200 {url, expiresAt}
+                       ├── auth + key validation
+                       ├── per-uid daily regen quota (Firestore counter)
+                       ├── call Gemini (always; no cache check)
+                       ├── upload to GCS users/<uid>/<key> (private, immutable)
+                       └── sign URL → 200 {url, expiresAt}
 
 GCS bucket (private, uniform bucket-level access) ◄── browser fetches asset directly via signed URL
 Secret Manager (gemini-api-key) ──► mounted as $GEMINI_API_KEY env var on Cloud Run
+Firestore regen_quota/<uid> ◄── per-uid daily counter for regen calls
 ```
 
 ### Request flow consequences
@@ -57,7 +68,7 @@ Secret Manager (gemini-api-key) ──► mounted as $GEMINI_API_KEY env var on 
 - Gemini key never leaves Cloud Run. Lives in Secret Manager, mounted by Cloud Run as `$GEMINI_API_KEY`.
 - Bucket is private. Browsers receive V4 signed GET URLs with 1-hour TTL and load assets directly from GCS.
 - All asset/music access goes through Firebase Auth verification. Anonymous traffic cannot burn the AI quota.
-- Each (theme × game) asset is generated **once globally**. After the first user warms it, every other user hits the cache.
+- Each (theme × game) asset is generated **once globally** by default. The first user warms the shared cache at `assets/v1/global/<key>.png`; everyone else hits it. Users who want a different roll can call the regenerate endpoint, which produces a personalized copy at `assets/v1/users/<uid>/<key>.png` and serves it only to them on subsequent GETs.
 - The browser-side queue/retry/IndexedDB-cache machinery (~370 lines across `AssetManager.ts` and `MusicManager.ts`) is deleted. Those modules become ~40-line clients that fetch from the API.
 
 ---
@@ -71,13 +82,14 @@ server/
   index.ts            # Express bootstrap, static, /healthz, /api mount, port binding
   middleware/
     auth.ts           # verifyFirebaseToken → req.uid; 401 on failure
+    regenLimit.ts     # per-uid daily regen counter (Firestore); 429 on overage
     errors.ts         # central error handler; sanitised JSON; structured logging
   routes/
-    asset.ts          # GET /api/asset/:key
-    music.ts          # GET /api/music/:theme/:gameType
+    asset.ts          # GET /api/asset/:key, POST /api/asset/:key/regenerate
+    music.ts          # GET /api/music/:theme/:gameType, POST /api/music/:theme/:gameType/regenerate
   lib/
     gemini.ts         # generateImage(prompt, aspect), generateMusic(prompt)
-    cache.ts          # cachedOrGenerate(): HEAD-or-generate, in-flight lock, sign URL
+    cache.ts          # readOrGenerateGlobal(), regenerateShadow(): HEAD/generate, in-flight lock, sign URL
     storage.ts        # GCS client wrapper: head, upload, getSignedUrl
     prompts.ts        # ASSET_PROMPTS and MUSIC_PROMPTS (moved out of client)
     config.ts         # typed env-var reader; throws at boot if a required var is missing
@@ -87,32 +99,54 @@ server/
 
 1. Auth middleware verifies `Authorization: Bearer <id-token>` via `firebase-admin.auth().verifyIdToken()`. Sets `req.uid`. Rejects with 401 on missing/malformed/expired.
 2. Validate `:key` against `Object.keys(ASSET_PROMPTS)`. Reject unknown with 400. **No user-supplied prompt text ever reaches Gemini.**
-3. Compute object name `assets/v1/<key>.png`.
-4. `cachedOrGenerate({ bucket, objectName, contentType: 'image/png', generator })`:
-   - HEAD the GCS object. If exists → sign URL, return.
-   - Else, acquire per-key in-memory lock (`Map<string, Promise>`). Coalesces concurrent requests for the same key on the same instance.
-   - Call generator (Gemini image API). On success: upload to GCS with `Cache-Control: public, max-age=31536000, immutable` and the right content-type, then sign URL.
+3. Compute candidate object names: `assets/v1/users/<req.uid>/<key>.png` (user shadow) and `assets/v1/global/<key>.png` (shared default).
+4. HEAD the user-shadow object. If exists → sign URL, return. (Cheap; no lock needed since shadow is only ever written by this user's own POST.)
+5. `readOrGenerateGlobal({ bucket, objectName: <global>, contentType: 'image/png', generator })`:
+   - HEAD the global object. If exists → sign URL, return.
+   - Else, acquire per-key in-memory lock (`Map<string, Promise>`). Coalesces concurrent requests for the same global key on the same instance.
+   - Call generator (Gemini image API). On success: upload to global path with `Cache-Control: public, max-age=31536000, immutable` and the right content-type, then sign URL.
    - On failure: release lock, propagate typed error.
-5. Respond `200 { url: <signed-url>, expiresAt: <epoch> }`.
-6. Errors handled centrally → `502 { error: 'generation_failed' }` with no stack or upstream message.
+6. Respond `200 { url: <signed-url>, expiresAt: <epoch> }`.
+7. Errors handled centrally → `502 { error: 'generation_failed' }` with no stack or upstream message.
 
 ### Endpoint contract — `GET /api/music/:theme/:gameType`
 
-Same shape as asset routes against `MUSIC_PROMPTS`, with `audio/wav` content type, object name `music/v1/<theme>_<gameType>.wav`.
+Same shape as asset routes against `MUSIC_PROMPTS`, with `audio/wav` content type. Candidate names `music/v1/users/<req.uid>/<theme>_<gameType>.wav` (shadow) and `music/v1/global/<theme>_<gameType>.wav` (shared default).
+
+### Endpoint contract — `POST /api/asset/:key/regenerate`
+
+1. Auth middleware: same as GET.
+2. `regenLimit` middleware: read-modify-write `regen_quota/<req.uid>` Firestore document keyed on today's UTC date. If counter `>= REGEN_RATE_LIMIT_PER_DAY` (default 200), reject with `429 { error: 'regen_quota_exceeded' }` and do not invoke the generator. Otherwise increment and continue. Counter resets on UTC date rollover.
+3. Validate `:key` against `Object.keys(ASSET_PROMPTS)`. Reject unknown with 400.
+4. `regenerateShadow({ bucket, objectName: 'assets/v1/users/<req.uid>/<key>.png', contentType: 'image/png', generator })`:
+   - Always call generator (Gemini image API), bypassing any HEAD check.
+   - On success: upload to user-shadow path with `Cache-Control: private, max-age=31536000, immutable`, then sign URL.
+   - On failure: propagate typed error. Quota counter is **not** decremented (keeps the limit a hard cap; protects against retry storms).
+5. Respond `200 { url: <signed-url>, expiresAt: <epoch> }`.
+6. Errors handled centrally → `502 { error: 'generation_failed' }` with no stack or upstream message.
+
+### Endpoint contract — `POST /api/music/:theme/:gameType/regenerate`
+
+Same shape, against `MUSIC_PROMPTS`, with `audio/wav` content type, object name `music/v1/users/<req.uid>/<theme>_<gameType>.wav`.
 
 ### Auth, rate limiting, headers
 
 - **Firebase Auth ID tokens** in `Authorization: Bearer <token>` header on all `/api/*` routes (except `/healthz`).
-- **`express-rate-limit`** keyed by `req.uid`, 30 requests per minute (configurable via `RATE_LIMIT_RPM`). Returns 429.
+- **`express-rate-limit`** keyed by `req.uid`, 30 requests per minute (configurable via `RATE_LIMIT_RPM`). Returns 429. Applies to `GET /api/*` only — regen endpoints have their own quota.
+- **Regen quota** — `POST /api/*/regenerate` enforces a per-uid per-day cap (default 200, configurable via `REGEN_RATE_LIMIT_PER_DAY`). Counter persisted in Firestore at `regen_quota/<uid>` (document holds today's UTC date and the count). Bounds the Gemini cost any single user can drive. A full "regenerate all my assets" click costs ~30 (image keys) + ~10 (music tracks) ≈ 40 quota units; default 200/day allows ~5 full cycles.
 - **Helmet** with default CSP, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `frame-ancestors 'none'`.
 - **CORS** disabled by default (same-origin); enabled per env var if needed for split deploys.
 
 ### Caching strategy
 
 - **GCS bucket** `${GCP_PROJECT_ID}-ovg-casino-assets` (configurable via `GCS_BUCKET`). Uniform bucket-level access; no public ACLs.
-- **Object versioning via path prefix** — `assets/v1/...`, `music/v1/...`. To invalidate the cache after a prompt change, bump to `v2` in code (no manual GCS purge needed).
+- **Object layout** —
+  - `assets/v1/global/<key>.png`, `music/v1/global/<theme>_<gameType>.wav` — shared default. Generated once globally on first GET miss. `Cache-Control: public, max-age=31536000, immutable`.
+  - `assets/v1/users/<uid>/<key>.png`, `music/v1/users/<uid>/<theme>_<gameType>.wav` — per-user shadow. Created only by an explicit POST regen call. `Cache-Control: private, max-age=31536000, immutable`. GET checks user-shadow first, falls back to global.
+- **Versioning via path prefix** — bump `v1` → `v2` in code to invalidate both global and shadow caches simultaneously after a prompt change. Old `v1/users/...` objects linger in GCS unreachable; clean up via lifecycle rule or manual `gcloud storage rm` if needed.
 - **Signed URLs** V4, 1-hour TTL (configurable via `SIGNED_URL_TTL_SEC`). Maximum allowed by GCS is 7 days; we default low for defence-in-depth.
-- **Per-instance dedup** via `Map<string, Promise>` lock. Across instances, GCS HEAD-on-arrival is cheap so duplicate generation is bounded.
+- **Per-instance dedup** via `Map<string, Promise>` lock keyed on the global object name. Across instances, GCS HEAD-on-arrival is cheap so duplicate generation is bounded. Shadow writes are not lock-coalesced — a user spamming regen for the same key produces sequential overwrites, bounded by their daily quota.
+- **Shadow lifecycle** — shadow objects persist indefinitely in v1. No TTL eviction. Storage cost discussed in §10.
 
 ### Health & ops
 
@@ -126,11 +160,14 @@ Same shape as asset routes against `MUSIC_PROMPTS`, with `audio/wav` content typ
 
 ### Slim AI clients
 
-`src/lib/AssetManager.ts` and `src/lib/MusicManager.ts` become ~40-line clients each:
+`src/lib/AssetManager.ts` and `src/lib/MusicManager.ts` become ~50-line clients each:
 
 - In-memory `Map<key, {url, expiresAt}>`.
-- On request: if memo hit and not within 60s of expiry → return cached URL. Else fetch from API endpoint with `Authorization: Bearer <id-token>` (obtained via `auth.currentUser.getIdToken()`). Store `{url, expiresAt}` from the JSON response. Return URL.
+- `getAsset(key)`: if memo hit and not within 60s of expiry → return cached URL. Else `GET /api/asset/:key` with `Authorization: Bearer <id-token>` (obtained via `auth.currentUser.getIdToken()`). Store `{url, expiresAt}` from the JSON response. Return URL.
+- `regenerateAsset(key)`: `POST /api/asset/:key/regenerate` with the same auth header. Replace the memo entry with the returned `{url, expiresAt}`. Return URL. 429 surfaces as a typed `RegenQuotaExceededError` so the UI can render a friendly toast.
 - Fetch errors reject the promise without poisoning memo (so retries work).
+
+`MusicManager` mirrors the same shape with `regenerateMusic(theme, gameType)`.
 
 The `ASSET_PROMPTS` and `MUSIC_PROMPTS` maps move to `server/lib/prompts.ts`. Client no longer references them.
 
@@ -188,7 +225,7 @@ New `src/components/Games/gameLogic.ts` extracts win-determination from the comp
 - `firebase-utils.ts`: throw real `Error` objects with structured fields as own properties. Stop throwing `new Error(JSON.stringify(...))`.
 - `useAssets`: replace `keys.join(',')` effect dep with explicit memoization at call sites.
 - Drop unused imports across the games (`useEffect`, `useRef` in some files).
-- `Profile.tsx`: drop the "Regenerate Assets" button. Server-side cache is invalidated by deploy version bump (`assets/v1/` → `v2/`) or `gcloud storage rm`, not by individual users.
+- `Profile.tsx`: keep the "Regenerate Assets" button, rewire it to the new `regenerateAsset` / `regenerateMusic` client methods. On click: fire all known asset and music keys in parallel through the regen endpoints (`Promise.allSettled` so one failure doesn't abort the rest), then refresh the in-memory memo so subsequent renders pick up the new shadow URLs. Disable the button while in flight; show progress (e.g. `Regenerating 12/40…`). On `RegenQuotaExceededError`, surface a friendly toast (`"You've hit today's regenerate limit — try again tomorrow."`) and stop firing further requests in this batch. The shared global cache is unaffected; only this user's shadow copies are written.
 
 ### CES Messenger — make it optional
 
@@ -202,7 +239,7 @@ New `src/components/Games/gameLogic.ts` extracts win-determination from the comp
 
 | Where | Used by | How loaded | Examples |
 |---|---|---|---|
-| `.env` (local) / Cloud Run env vars (prod) — server | Express server | `process.env` via `server/lib/config.ts`; throws at boot if a required var is missing | `GCS_BUCKET`, `FIREBASE_PROJECT_ID`, `PORT`, `RATE_LIMIT_RPM`, `SIGNED_URL_TTL_SEC` |
+| `.env` (local) / Cloud Run env vars (prod) — server | Express server | `process.env` via `server/lib/config.ts`; throws at boot if a required var is missing | `GCS_BUCKET`, `FIREBASE_PROJECT_ID`, `PORT`, `RATE_LIMIT_RPM`, `REGEN_RATE_LIMIT_PER_DAY`, `SIGNED_URL_TTL_SEC` |
 | `.env` (local) / build args (prod) — client | React build | `import.meta.env.VITE_*` baked into bundle at `vite build` time | `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID`, `VITE_FIREBASE_DATABASE_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_CES_DEPLOYMENT_ID` (optional), `VITE_CES_TOKEN_BROKER_URL` (optional) |
 | Secret Manager — server only | Express server | Mounted by Cloud Run as env var via `--set-secrets`; never in `.env.example`, never in source | `GEMINI_API_KEY` |
 
@@ -216,6 +253,7 @@ export const config = {
   firebaseProjectId: requireStr('FIREBASE_PROJECT_ID'),
   signedUrlTtlSec: optionalInt('SIGNED_URL_TTL_SEC', 3600),
   rateLimitRpm: optionalInt('RATE_LIMIT_RPM', 30),
+  regenLimitPerDay: optionalInt('REGEN_RATE_LIMIT_PER_DAY', 200),
 };
 ```
 
@@ -236,10 +274,13 @@ Uses Application Default Credentials. On Cloud Run that's the attached service a
 - `roles/iam.serviceAccountTokenCreator` on **itself** — for V4 signed URL signing without an SA key file (uses metadata server `iamcredentials.signBlob`).
 - `roles/storage.objectAdmin` scoped to `${GCS_BUCKET}` only — read/write/sign on the asset bucket.
 - `roles/secretmanager.secretAccessor` on the `gemini-api-key` secret only.
+- `roles/datastore.user` on the project — Firestore read/write for the `regen_quota/<uid>` counter (firebase-admin Application Default Credentials). Existing app already uses Firestore for player data; this just makes the runtime SA's access explicit.
 
 ### Firestore rules
 
 Existing `firestore.rules` deploys cleanly against any project (no project-specific references). The `setup` step in `deploy.sh` deploys it via `firebase deploy --only firestore:rules` if the `firebase` CLI is installed; otherwise prints the manual command.
+
+The `regen_quota` collection is added to the rules with **deny-all** to client SDKs — only the server's Admin SDK (which bypasses rules) writes to it. This prevents a malicious client from resetting their own counter.
 
 ---
 
@@ -348,17 +389,18 @@ Lists every variable needed by setup, build, and deploy: GCP location (`GCP_PROJ
 | File under test | Coverage |
 |---|---|
 | `server/lib/config.ts` | Required-var read returns value; missing required throws with the var name; optional-var defaults applied; type coercion for ints. |
-| `server/lib/cache.ts` | Cache hit returns existing signed URL without invoking generator. Cache miss invokes generator, uploads to GCS with correct content-type + cache-control, then signs. Per-key in-flight lock: two concurrent calls invoke generator once and resolve to the same URL. Generator failure propagates typed error and does not write to GCS. |
+| `server/lib/cache.ts` | `readOrGenerateGlobal`: cache hit returns existing signed URL without invoking generator. Cache miss invokes generator, uploads to global path with correct content-type + cache-control: public, then signs. Per-key in-flight lock: two concurrent calls invoke generator once and resolve to the same URL. Generator failure propagates typed error and does not write to GCS. `regenerateShadow`: always invokes generator (even when shadow exists), uploads to user-shadow path with cache-control: private, then signs. Generator failure propagates without writing. |
 | `server/middleware/auth.ts` | Valid Bearer token → `req.uid` set, `next()` called. Missing header → 401. Malformed token → 401. Expired token → 401. firebase-admin called once per request. |
-| `server/routes/asset.ts` | Unknown `:key` → 400 with no generator call. Known key + auth + cache hit → 200 `{url, expiresAt}`. Cache miss → generator invoked exactly once → 200. Generator throws → 502 with sanitised body (no stack, no upstream message). |
-| `server/routes/music.ts` | Same shape as asset routes against the music prompts allow-list. |
+| `server/middleware/regenLimit.ts` | First call of the day for a uid → counter set to 1, `next()` called. Subsequent same-day calls increment. Call N+1 (where N = `REGEN_RATE_LIMIT_PER_DAY`) → 429 `{ error: 'regen_quota_exceeded' }` and downstream handler NOT invoked. Counter resets at next UTC date rollover (verified by stubbing `Date`). Failed downstream still consumes quota (no decrement). |
+| `server/routes/asset.ts` | Unknown `:key` → 400 with no generator call. Known key + auth + global cache hit → 200 `{url, expiresAt}`. Cache miss → generator invoked exactly once → 200. Generator throws → 502 with sanitised body (no stack, no upstream message). GET prefers user-shadow over global when both exist (verified by stubbing HEAD to return shadow). POST `/regenerate` always calls generator regardless of cache state, writes to user-shadow path under the caller's uid, returns the new signed URL. Two different uids regenerating the same key produce isolated objects under their respective `users/<uid>/` prefixes (cross-user isolation). |
+| `server/routes/music.ts` | Same shape as asset routes against the music prompts allow-list, including shadow lookup, regen behavior, and cross-user isolation. |
 | `server/index.ts` | `/healthz` returns 200 unauthenticated. Helmet headers present on responses. Rate limiter rejects 31st request in a minute from same uid with 429. |
 
 ### Client-side tests
 
 | File under test | Coverage |
 |---|---|
-| `src/lib/AssetManager.ts`, `src/lib/MusicManager.ts` | First call fetches from API with `Authorization: Bearer <token>`. Second call within TTL returns memoised URL without refetching. Call within 60s of expiry refetches. Fetch error rejects without poisoning memo. |
+| `src/lib/AssetManager.ts`, `src/lib/MusicManager.ts` | First `getAsset`/`getMusic` call fetches from API with `Authorization: Bearer <token>`. Second call within TTL returns memoised URL without refetching. Call within 60s of expiry refetches. Fetch error rejects without poisoning memo. `regenerateAsset`/`regenerateMusic` POSTs to the regen endpoint, replaces memo entry on success, throws typed `RegenQuotaExceededError` on 429 response. |
 | `src/components/Games/gameLogic.ts` | Pure helpers: `evaluateRouletteBet`, `evaluateSlotsResult`, `evaluateBingoBoard`. Direct unit tests on each. |
 | `src/components/Games/GameShell.tsx` | Renders children, calls `onPlay` on play button click, disables button when `playDisabled`, shows loading state when assets/music are loading. Light render-only — no animation assertions. |
 | `src/lib/firebase-utils.ts` | `handleFirestoreError` throws an `Error` (not stringified JSON) with structured fields as own properties. |
@@ -395,11 +437,11 @@ End-to-end replacement of the AI-Studio default. Six sections:
 
 ### `docs/ARCHITECTURE.md`
 
-Request-flow walkthrough for both `/api/asset` and `/api/music` endpoints. Where each piece of state lives (in-memory lock, GCS, Firestore, browser memo). Why signed URLs over public bucket. "Where do I add a new game/theme?" howto.
+Request-flow walkthrough for both `/api/asset` and `/api/music` endpoints (GET + POST regen). Two-tier shadow asset model — global default vs per-user override. Where each piece of state lives (in-memory lock, GCS, Firestore counters, browser memo). Why signed URLs over public bucket. "Where do I add a new game/theme?" howto. "What happens when a user clicks Regenerate?" walkthrough.
 
 ### `docs/SECURITY.md`
 
-Short threat-model note: no secrets in client bundle, signed URLs expire, Firebase Auth on API, rate-limit per uid, Helmet headers, no SSRF (prompts not user-supplied), Firestore rules summary.
+Short threat-model note: no secrets in client bundle, signed URLs expire, Firebase Auth on API, rate-limit per uid, regen quota per uid (caps Gemini-cost a single user can drive), Helmet headers, no SSRF (prompts not user-supplied), Firestore rules summary including server-only access to `regen_quota`.
 
 ### `.env.example` rewrite
 
@@ -418,7 +460,7 @@ Kept minimal per existing convention. Added only where non-obvious:
 ### Added
 
 - `server/index.ts`
-- `server/middleware/auth.ts`, `server/middleware/errors.ts`
+- `server/middleware/auth.ts`, `server/middleware/regenLimit.ts`, `server/middleware/errors.ts`
 - `server/routes/asset.ts`, `server/routes/music.ts`
 - `server/lib/gemini.ts`, `server/lib/cache.ts`, `server/lib/storage.ts`, `server/lib/prompts.ts`, `server/lib/config.ts`
 - `server/**/*.test.ts` (per §7)
@@ -444,11 +486,11 @@ Kept minimal per existing convention. Added only where non-obvious:
 - `src/lib/firebase-utils.ts` (throw real `Error`)
 - `src/hooks/useAssets.ts`, `src/hooks/useMusic.ts` (drop progress fan-out)
 - `src/components/Games/Roulette.tsx`, `src/components/Games/Slots.tsx`, `src/components/Games/Bingo.tsx` (use `GameShell` + extracted `gameLogic`)
-- `src/components/Profile.tsx` (drop "Regenerate Assets" button)
+- `src/components/Profile.tsx` (rewire "Regenerate Assets" button to call new POST /api/*/regenerate endpoints; show in-flight progress; handle quota-exceeded toast)
 - `.env.example` (rewritten per §8)
 - `.gitignore` (add `firebase-applet-config.json`, `deploy/.env.deploy`)
 - `README.md` (rewritten per §8)
-- `firestore.rules` (no functional change; deploy step added to `deploy.sh setup`)
+- `firestore.rules` (add deny-all rule for `regen_quota` collection so client SDKs cannot tamper; deploy step added to `deploy.sh setup`)
 
 ### Removed (deleted from repo)
 
@@ -460,10 +502,17 @@ Kept minimal per existing convention. Added only where non-obvious:
 
 ## 10. Open questions
 
-None. All architectural choices made during brainstorming:
+### Resolved during brainstorming
+
 - **AI generation:** server-side proxy at runtime (not pre-generation, not removal).
 - **Bucket access:** private + V4 signed URLs (not public).
 - **React cleanup depth:** deeper refactor including `<GameShell>` extraction.
 - **CES Messenger:** make optional via env vars (not strip, not hardcode).
 - **Deployment:** wrapped in `./deploy/deploy.sh setup|deploy|rotate-key|logs` script.
 - **Tests:** in scope — Vitest, ~25–35 tests, gates the deploy.
+- **User-triggered regeneration:** hybrid shadow model — global default + per-user override created on opt-in via POST regen, gated by per-uid daily quota (default 200/day ≈ 5 full-asset cycles).
+
+### Outstanding
+
+- **Shadow storage scaling.** With ~30 image keys (~500 KB each) + ~10 music tracks (~5 MB each) per user, a fully-regenerated user occupies ~65 MB of GCS. 1000 users who regenerate everything ≈ 65 GB; standard GCS storage at ~$0.02/GB·month ≈ $1.30/mo per 1000 active regenerators. Acceptable at prototype scale. If active-user count or regen frequency grows, options are: (a) GCS lifecycle rule to delete `users/<uid>/...` after N days of no read; (b) per-user object cap that evicts oldest on overflow; (c) a "reset to defaults" UX action that purges the user's shadow.
+- **Regen quota counter cost.** Firestore reads/writes on every regen call. At 200/day × N active users that's modest, but if growth is high, options are: in-process counter + Cloud Run `min-instances=1` (loses correctness on instance churn), or Memorystore for Redis (adds infra). Document the tradeoff but don't address in v1.
