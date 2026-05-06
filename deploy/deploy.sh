@@ -77,11 +77,13 @@ cmd_setup() {
     --role="roles/iam.serviceAccountTokenCreator"
 
   echo "=== Deploying Firestore rules ==="
-  if command -v firebase >/dev/null 2>&1; then
-    run firebase deploy --only firestore:rules --project "$GCP_PROJECT_ID"
-  else
-    echo "(firebase CLI not installed — run \`firebase deploy --only firestore:rules\` manually)"
+  if ! command -v firebase >/dev/null 2>&1; then
+    echo "ERROR: firebase CLI not installed. Install with: npm install -g firebase-tools" >&2
+    echo "       The regen_quota collection MUST be deny-all to clients (firestore.rules)," >&2
+    echo "       otherwise a client can reset its own daily counter and bypass the quota." >&2
+    exit 1
   fi
+  run firebase deploy --only firestore:rules --project "$GCP_PROJECT_ID"
 
   echo "=== Setup complete ==="
 }
