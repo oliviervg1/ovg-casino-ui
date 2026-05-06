@@ -1,3 +1,16 @@
+import type { ThemeType } from '../App';
+
+export const lightThemes: ThemeType[] = ['sweets', 'ocean', 'west'];
+export const darkThemes: ThemeType[] = ['egypt', 'space', 'jungle', 'vampire', 'ninja'];
+
+export type GlobalTheme = 'light' | 'dark';
+
+export function resolveGlobalTheme(theme: ThemeType | GlobalTheme | undefined): GlobalTheme {
+  if (theme === 'light' || theme === 'dark') return theme;
+  if (theme && lightThemes.includes(theme)) return 'light';
+  return 'dark';
+}
+
 export const getThemeStyles = (theme: string) => {
   const styles: Record<string, { font: string, text: string, title: string, message: string, label: string }> = {
     sweets: { font: 'font-sweets', text: 'text-pink-500', title: 'font-sweets tracking-wider text-5xl text-pink-500 drop-shadow-md', message: 'font-sweets tracking-wider text-3xl text-pink-600', label: 'font-sweets text-2xl text-pink-500' },
