@@ -55,12 +55,32 @@ Signed URLs let us keep the bucket fully private — no public ACLs, no risk of 
 
 ## Adding a new game or theme
 
-1. Add prompt entries to `server/lib/prompts.ts` for each `<asset>_<theme>` (3 game pictograms + 4 symbols + 3 backgrounds = 10 keys per theme) and 3 music keys (`<theme>_<gametype>`).
-2. Add the theme to `src/utils/themeStyles.ts` (light or dark group).
-3. Add the game (or theme) entry to `src/config/games.ts`.
-4. Bump `v1` → `v2` in cache prefixes in code if the prompt change should invalidate existing cached assets globally.
-5. Deploy.
+The theme name appears in **six** places — miss one and the new theme silently 400s on requests or doesn't render in the lobby. There's a single global `bg_main` key (lobby/profile chrome) that is **not** theme-scoped and only gets added once.
+
+1. **Prompts (`server/lib/prompts.ts`):** add `ASSET_PROMPTS` entries for each `<asset>_<theme>` (3 game pictograms + 4 symbols + 3 backgrounds = 10 keys per theme) and 3 `MUSIC_PROMPTS` keys (`<theme>_<gametype>`). Total per theme: 10 image + 3 music = 13 keys. (Plus the one-off `bg_main` if you're seeding the project from scratch.)
+2. **Theme styling (`src/utils/themeStyles.ts`):** add to `lightThemes` or `darkThemes` array; add a per-theme accent class to `getThemeStyles()`.
+3. **Type union (`src/App.tsx`):** add the theme id to the `ThemeType` union.
+4. **Lobby (`src/components/Lobby.tsx`):** add an entry to the `themes` array (id, name, color, fallback emoji).
+5. **Slots fallback (`src/components/Games/Slots.tsx`):** add to `FALLBACK_SYMBOLS_MAP` (the emoji shown while generated symbols are still loading).
+6. **Profile regen list (`src/components/Profile.tsx`):** add to the hard-coded theme array used by `ASSET_KEYS` + `MUSIC_PAIRS` so the Regenerate-Assets button refreshes the new theme.
+7. **Game registry (`src/config/games.ts`):** add a roulette/slots/bingo entry per new theme.
+8. (Optional) Bump `v1` → `v2` in cache prefixes in `server/routes/{asset,music}.ts` if a prompt change should invalidate existing cached assets globally.
+9. Deploy.
 
 ## What happens when a user clicks Regenerate?
 
-`Profile.tsx` fires a parallel batch of `regenerateAsset(key)` and `regenerateMusic(theme, gameType)` calls — one per known asset and music pair. Each one POSTs to its `/regenerate` endpoint, gets quota-checked, generates fresh bytes via Gemini, uploads to the user's shadow path, and returns the new signed URL. Failures are surfaced per-key; a 429 short-circuits the batch with a friendly toast. The global cache is untouched; only this user's shadow copies change.
+`Profile.tsx` builds 105 tasks (81 asset keys + 24 music pairs), then runs them through a worker pool with concurrency capped at **4**. Each task POSTs to `/api/asset/:key/regenerate` (or the music equivalent), gets auth-then-rate-limited then quota-checked, generates fresh bytes via Gemini, uploads to the user's shadow path, and returns the new signed URL. The pool drains in ~3-4 minutes at the default 30 req/min limiter — concurrency is the throttle, not parallel-everything. The global cache is untouched; only this user's shadow copies change.
+
+After the pool finishes, `Profile.tsx` reports one of three end states:
+- **`RegenQuotaExceededError` seen** (per-day quota): "try again tomorrow"
+- **`RateLimitError` seen** (per-minute throttle): "try again in a minute"
+- **Generic failures**: "N/total failed"
+
+The two error classes are shared via `src/lib/errors.ts` so `instanceof` works regardless of whether the rejection came from `AssetManager` or `MusicManager`.
+
+## Operator: refreshing global assets
+
+`POST /regenerate` only touches a user's shadow path. If the first user's GET miss baked a poor-quality global asset into `assets/v1/global/<key>.png`, every NEW user keeps seeing it until you intervene. Two operator workflows:
+
+- **Delete and let the next GET re-warm:** `gcloud storage rm gs://<bucket>/assets/v1/global/<key>.png` (or the music equivalent under `music/v1/global/<key>.wav`). The next GET cache-misses → `readOrGenerateGlobal` → fresh upload.
+- **Bump the prefix version** in `server/routes/{asset,music}.ts` (`v1` → `v2`) and redeploy. Old objects linger in GCS but become unreachable. Add a GCS lifecycle rule to garbage-collect them if you care.

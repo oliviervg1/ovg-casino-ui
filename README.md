@@ -13,14 +13,16 @@ Browser ──► Cloud Run (Express + React static)
               │
               ├── GET /api/asset/:key
               │   GET /api/music/:theme/:gameType
-              │        → Helmet + auth + rate-limit
+              │        → Helmet → CORS → JSON parser
+              │        → verifyFirebaseToken → per-uid rate-limit (30 req/min)
               │        → HEAD users/<uid>/<key>     → hit: sign URL
               │        → HEAD global/<key>          → hit: sign URL
               │        → miss: lock, call Gemini, upload to global, sign URL
               │
               └── POST /api/asset/:key/regenerate
                   POST /api/music/:theme/:gameType/regenerate
-                       → auth + per-uid daily quota (Firestore counter)
+                       → verifyFirebaseToken → per-uid rate-limit
+                       → per-uid daily regen quota (Firestore counter, 200/day)
                        → call Gemini, upload to users/<uid>/<key>, sign URL
 ```
 
@@ -33,7 +35,7 @@ Prerequisites: Node 22+, a Firebase project (Auth + Firestore enabled), a Gemini
 ```bash
 git clone <repo>
 cd ovg-casino-ui
-cp .env.example .env   # then fill in the VITE_FIREBASE_* and GEMINI_API_KEY values
+cp .env.example .env   # then fill in GCS_BUCKET, FIREBASE_PROJECT_ID, GEMINI_API_KEY, and all VITE_FIREBASE_* values
 npm install
 npm run dev:server    # terminal 1 — Express on :8080
 npm run dev           # terminal 2 — Vite on :3000, proxies /api to :8080
@@ -79,7 +81,7 @@ All env vars documented in `.env.example` (local + server) and `deploy/.env.depl
 - `src/` — React client (Vite-built)
 - `server/` — Express server (TypeScript-built to `dist-server/`)
 - `deploy/` — Cloud Build + deploy script
-- `docs/` — architecture, security, brainstormed designs and plans
+- `docs/` — architecture and security notes
 - `firestore.rules` — Firestore security rules
 
 See `docs/ARCHITECTURE.md` and `docs/SECURITY.md` for design and threat-model notes.
