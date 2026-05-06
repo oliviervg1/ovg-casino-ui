@@ -5,8 +5,22 @@ export interface RegenLimitOptions {
   limitPerDay: number;
 }
 
+interface QuotaDoc { date: string; count: number; }
+
 function todayUtc(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+function secondsUntilUtcMidnight(): number {
+  const now = new Date();
+  const nextMidnight = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1);
+  return Math.ceil((nextMidnight - now.getTime()) / 1000);
+}
+
+function isValidQuotaDoc(data: unknown): data is QuotaDoc {
+  if (!data || typeof data !== 'object') return false;
+  const d = data as Record<string, unknown>;
+  return typeof d.date === 'string' && typeof d.count === 'number' && Number.isFinite(d.count);
 }
 
 export function createRegenLimit(opts: RegenLimitOptions) {
@@ -24,12 +38,9 @@ export function createRegenLimit(opts: RegenLimitOptions) {
     try {
       const allowed = await db.runTransaction(async (tx) => {
         const snap = await tx.get(ref);
-        if (!snap.exists) {
-          tx.set(ref, { date: today, count: 1 });
-          return true;
-        }
-        const data = snap.data() as { date: string; count: number };
-        if (data.date !== today) {
+        const data = snap.exists ? snap.data() : undefined;
+        // Reset if missing, malformed, or stale (yesterday or earlier).
+        if (!isValidQuotaDoc(data) || data.date !== today) {
           tx.set(ref, { date: today, count: 1 });
           return true;
         }
@@ -41,7 +52,9 @@ export function createRegenLimit(opts: RegenLimitOptions) {
       });
 
       if (!allowed) {
-        res.status(429).json({ error: 'regen_quota_exceeded' });
+        res.set('Retry-After', String(secondsUntilUtcMidnight()))
+          .status(429)
+          .json({ error: 'regen_quota_exceeded' });
         return;
       }
       next();

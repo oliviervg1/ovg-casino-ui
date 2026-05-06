@@ -26,6 +26,7 @@ function makeRes(): Response {
   const res: any = {};
   res.status = vi.fn(() => res);
   res.json = vi.fn(() => res);
+  res.set = vi.fn(() => res);
   return res as Response;
 }
 
@@ -81,6 +82,27 @@ describe('createRegenLimit middleware', () => {
     expect(next).toHaveBeenCalledOnce();
   });
 
+  it('count = limit-1 still allows and increments to limit', async () => {
+    const updateSpy = vi.fn();
+    mockRunTransaction.mockImplementationOnce(async (fn: any) => {
+      const tx = {
+        get: vi.fn().mockResolvedValueOnce({ exists: true, data: () => ({ date: TODAY, count: 199 }) }),
+        set: vi.fn(),
+        update: updateSpy,
+      };
+      return fn(tx);
+    });
+    const { createRegenLimit } = await import('./regenLimit.js');
+    const limiter = createRegenLimit({ limitPerDay: 200 });
+    const req = { uid: 'user-1' } as unknown as Request;
+    const res = makeRes();
+    const next = vi.fn() as NextFunction;
+    await limiter(req, res, next);
+    expect(updateSpy).toHaveBeenCalledWith(expect.anything(), { count: 200 });
+    expect(next).toHaveBeenCalledOnce();
+    expect(res.status).not.toHaveBeenCalled();
+  });
+
   it('rejects with 429 once count reaches the daily limit', async () => {
     const setSpy = vi.fn();
     const updateSpy = vi.fn();
@@ -105,11 +127,70 @@ describe('createRegenLimit middleware', () => {
     expect(updateSpy).not.toHaveBeenCalled();
   });
 
+  it('429 response includes Retry-After header in seconds until UTC midnight', async () => {
+    mockRunTransaction.mockImplementationOnce(async (fn: any) => {
+      const tx = {
+        get: vi.fn().mockResolvedValueOnce({ exists: true, data: () => ({ date: TODAY, count: 200 }) }),
+        set: vi.fn(),
+        update: vi.fn(),
+      };
+      return fn(tx);
+    });
+    const { createRegenLimit } = await import('./regenLimit.js');
+    const limiter = createRegenLimit({ limitPerDay: 200 });
+    const req = { uid: 'user-1' } as unknown as Request;
+    const res = makeRes();
+    const next = vi.fn() as NextFunction;
+    await limiter(req, res, next);
+    // System time pinned to TODAY 12:00:00 UTC; midnight UTC is 12 h away = 43200 s.
+    expect(res.set).toHaveBeenCalledWith('Retry-After', '43200');
+  });
+
   it('resets counter on UTC date rollover', async () => {
     const setSpy = vi.fn();
     mockRunTransaction.mockImplementationOnce(async (fn: any) => {
       const tx = {
         get: vi.fn().mockResolvedValueOnce({ exists: true, data: () => ({ date: '2026-05-04', count: 200 }) }),
+        set: setSpy,
+        update: vi.fn(),
+      };
+      return fn(tx);
+    });
+    const { createRegenLimit } = await import('./regenLimit.js');
+    const limiter = createRegenLimit({ limitPerDay: 200 });
+    const req = { uid: 'user-1' } as unknown as Request;
+    const res = makeRes();
+    const next = vi.fn() as NextFunction;
+    await limiter(req, res, next);
+    expect(setSpy).toHaveBeenCalledWith(expect.anything(), { date: TODAY, count: 1 });
+    expect(next).toHaveBeenCalledOnce();
+  });
+
+  it('treats a malformed doc (wrong shape) as missing and resets to count=1', async () => {
+    const setSpy = vi.fn();
+    mockRunTransaction.mockImplementationOnce(async (fn: any) => {
+      const tx = {
+        get: vi.fn().mockResolvedValueOnce({ exists: true, data: () => ({ garbage: true }) }),
+        set: setSpy,
+        update: vi.fn(),
+      };
+      return fn(tx);
+    });
+    const { createRegenLimit } = await import('./regenLimit.js');
+    const limiter = createRegenLimit({ limitPerDay: 200 });
+    const req = { uid: 'user-1' } as unknown as Request;
+    const res = makeRes();
+    const next = vi.fn() as NextFunction;
+    await limiter(req, res, next);
+    expect(setSpy).toHaveBeenCalledWith(expect.anything(), { date: TODAY, count: 1 });
+    expect(next).toHaveBeenCalledOnce();
+  });
+
+  it('treats a doc with non-numeric count as missing and resets to count=1', async () => {
+    const setSpy = vi.fn();
+    mockRunTransaction.mockImplementationOnce(async (fn: any) => {
+      const tx = {
+        get: vi.fn().mockResolvedValueOnce({ exists: true, data: () => ({ date: TODAY, count: NaN }) }),
         set: setSpy,
         update: vi.fn(),
       };
