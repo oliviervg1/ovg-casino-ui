@@ -6,17 +6,17 @@ OVG Casino is a single-tenant Cloud Run service. The runtime container serves bo
 
 ## Request flow — `GET /api/asset/:key`
 
-1. Browser sends request with `Authorization: Bearer <Firebase-ID-token>`.
+1. Browser sends request with `X-Firebase-Token: <Firebase-ID-token>` (Cloud Shell's web-preview reverse proxy intercepts `Authorization: Bearer` headers and redirects them to its JWT auth flow; the server still accepts both for ad-hoc curl/testing).
 2. `verifyFirebaseToken` middleware decodes the token via `firebase-admin`. Sets `req.uid`. 401 on invalid/expired/missing.
-3. Per-uid rate limit (`express-rate-limit`, default 30 req/min). 429 on overage.
-4. Route handler validates `:key` against `Object.keys(ASSET_PROMPTS)`. 400 on unknown.
-5. **Shadow lookup:** HEAD `assets/v1/users/<uid>/<key>.png` in GCS. If exists, sign and return.
-6. **Global fallback:** `readOrGenerateGlobal(assets/v1/global/<key>.png)`:
-   - HEAD; if exists, sign and return.
+3. Route handler validates `:key` against `Object.keys(ASSET_PROMPTS)`. 400 on unknown.
+4. **Shadow lookup:** HEAD `assets/v1/users/<uid>/<key>.png` in GCS. If exists, sign and return — no rate-limit token consumed.
+5. **Global fallback:** `readOrGenerateGlobal(assets/v1/global/<key>.png)`:
+   - HEAD; if exists, sign and return — no rate-limit token consumed.
    - Else, acquire per-key in-memory lock. Coalesces concurrent same-key requests on this instance.
+   - `consumeGenerationToken(uid, RATE_LIMIT_RPM)` — throws `GenerationRateLimitError` (→ 429) if the per-uid 30/min generation budget is exhausted.
    - Call `generateImage(prompt, aspectRatio)` against Gemini. On success, upload to GCS with `Cache-Control: public, max-age=31536000, immutable`. Sign the URL.
    - Release the lock.
-7. Respond `200 { url, expiresAt }`.
+6. Respond `200 { url, expiresAt }`.
 
 The browser fetches the asset bytes directly from GCS via the signed URL. Bandwidth doesn't pass through Cloud Run.
 
@@ -25,7 +25,8 @@ The browser fetches the asset bytes directly from GCS via the signed URL. Bandwi
 1. Auth (same as GET).
 2. `regenLimit` middleware: read-modify-write `regen_quota/<uid>` Firestore document keyed on today's UTC date. If counter `>= REGEN_RATE_LIMIT_PER_DAY` (default 200), reject with 429. Otherwise increment and continue.
 3. Route validates `:key`.
-4. `regenerateShadow(assets/v1/users/<uid>/<key>.png)`: always invokes the generator, uploads to the user-shadow path with `Cache-Control: private, max-age=31536000, immutable`.
+4. `consumeGenerationToken(uid, RATE_LIMIT_RPM)` — same per-minute budget shared with cache-miss GETs; throws → 429 on overage.
+5. `regenerateShadow(assets/v1/users/<uid>/<key>.png)`: always invokes the generator, uploads to the user-shadow path with `Cache-Control: private, max-age=31536000, immutable`.
 5. Respond `200 { url, expiresAt }`.
 
 The user's next GET will see the shadow object and serve from there. Other users are unaffected.

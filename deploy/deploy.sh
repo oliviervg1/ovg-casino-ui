@@ -63,18 +63,25 @@ cmd_setup() {
   PROJECT_NUMBER=$(gcloud projects describe "$GCP_PROJECT_ID" --format="value(projectNumber)")
   RUN_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
 
+  # --condition=None is required when the existing policy contains any
+  # conditional bindings; gcloud refuses to add an unconditional one
+  # implicitly in non-interactive mode otherwise.
   run gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
     --member="serviceAccount:${RUN_SA}" \
-    --role="roles/datastore.user"
+    --role="roles/datastore.user" \
+    --condition=None
   run gcloud secrets add-iam-policy-binding gemini-api-key \
     --member="serviceAccount:${RUN_SA}" \
-    --role="roles/secretmanager.secretAccessor"
+    --role="roles/secretmanager.secretAccessor" \
+    --condition=None
   run gcloud storage buckets add-iam-policy-binding "gs://${GCS_BUCKET}" \
     --member="serviceAccount:${RUN_SA}" \
-    --role="roles/storage.objectAdmin"
+    --role="roles/storage.objectAdmin" \
+    --condition=None
   run gcloud iam service-accounts add-iam-policy-binding "$RUN_SA" \
     --member="serviceAccount:${RUN_SA}" \
-    --role="roles/iam.serviceAccountTokenCreator"
+    --role="roles/iam.serviceAccountTokenCreator" \
+    --condition=None
 
   echo "=== Deploying Firestore rules ==="
   if ! command -v firebase >/dev/null 2>&1; then
@@ -98,6 +105,7 @@ cmd_deploy() {
     "_REGION=${GCP_REGION}"
     "_GCS_BUCKET=${GCS_BUCKET}"
     "_FIREBASE_PROJECT_ID=${VITE_FIREBASE_PROJECT_ID}"
+    "_FIRESTORE_DATABASE_ID=${FIRESTORE_DATABASE_ID:-}"
     "_VITE_FIREBASE_API_KEY=${VITE_FIREBASE_API_KEY}"
     "_VITE_FIREBASE_AUTH_DOMAIN=${VITE_FIREBASE_AUTH_DOMAIN}"
     "_VITE_FIREBASE_PROJECT_ID=${VITE_FIREBASE_PROJECT_ID}"

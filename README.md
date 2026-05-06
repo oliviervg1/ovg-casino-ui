@@ -9,7 +9,7 @@ Browser ──► Cloud Run (Express + React static)
               │
               ├── GET /  + /game/* + /assets/* → static React build (dist/)
               │
-              ├── GET /healthz → 200
+              ├── GET /_healthz → 200
               │
               ├── GET /api/asset/:key
               │   GET /api/music/:theme/:gameType

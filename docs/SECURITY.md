@@ -11,13 +11,13 @@ Short threat-model summary. Not a comprehensive audit.
 ## Asset access
 
 - GCS bucket has uniform bucket-level access; no public ACLs. Browsers receive V4 signed URLs with a 1-hour TTL.
-- All `/api/*` routes (except `/healthz`) require a valid Firebase ID token. Anonymous traffic cannot reach the Gemini-backed endpoints.
+- All `/api/*` routes require a valid Firebase ID token. The only unauthenticated endpoint is `/_healthz` (underscore-prefixed to bypass Cloud Run's `/healthz` GFE intercept). Anonymous traffic cannot reach the Gemini-backed endpoints.
 - Unmatched `/api/*` paths return JSON 404 (`{error: 'not_found'}`), not the SPA shell — so typos can't be CDN-cached as 200 HTML under arbitrary paths.
 
 ## Rate limiting
 
-- **`/api/*` GETs and POSTs**: per-uid 30 req/min via `express-rate-limit` (configurable via `RATE_LIMIT_RPM`). Mounted at app level **after** `verifyFirebaseToken`, so `req.uid` is set when the limiter's keyGenerator runs. Returns `429 {error: 'rate_limit'}`. The `app.set('trust proxy', 1)` line in `server/index.ts` ensures `req.ip` reflects the real client (not the GFE peer address) as a fallback key.
-  - **Caveat — per-instance, in-memory.** `express-rate-limit` v7 stores counters in process memory. With *N* Cloud Run instances and **no session affinity** (Cloud Run's default), the effective per-uid rate is up to `N × RATE_LIMIT_RPM`. Acceptable for the prototype; if you want a hard global cap, swap in a `rate-limit-redis`/Memorystore store.
+- **Generation events (Gemini/Lyria invocations)**: per-uid 30/min via `consumeGenerationToken` in `server/middleware/genLimit.ts` (configurable via `RATE_LIMIT_RPM`). Called from inside the generator function passed to `cache.ts`, so it fires only on cache-miss GETs and POST `/regenerate` — cache-hit GETs (HEAD + sign existing GCS object) are not counted. Concurrent same-key cache misses share the leader's generation via the `inFlight` map and consume one token between them. Returns `429 {error: 'rate_limit'}` with `Retry-After: <seconds-until-window-reset>`.
+  - **Caveat — per-instance, in-memory.** Counters live in a process-local `Map`. With *N* Cloud Run instances and **no session affinity** (Cloud Run's default), the effective per-uid rate is up to `N × RATE_LIMIT_RPM`. Acceptable for the prototype; if you want a hard global cap, swap the in-memory store for Redis/Memorystore.
 - **`/api/*/regenerate` POSTs**: per-uid daily counter (Firestore `regen_quota/<uid>`), default 200/day (configurable via `REGEN_RATE_LIMIT_PER_DAY`). Bounds the Gemini cost a single user can drive. Firestore-backed, so the limit is **global across all instances** — no `N×` multiplier. Returns `429 {error: 'regen_quota_exceeded'}` with a `Retry-After: <seconds-until-UTC-midnight>` header.
 - **Client distinguishes the two 429s** via the response body: `RegenQuotaExceededError` vs `RateLimitError` (see `src/lib/errors.ts`). Profile.tsx surfaces a different message for each.
 - **Auth failures** (missing/expired/forged ID token): logged server-side with the Firebase error code (e.g. `auth/id-token-expired`), 401-returned to client without leaking which failure mode it was.

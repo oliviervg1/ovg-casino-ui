@@ -3,6 +3,7 @@ substitutions:
   _REGION: us-central1
   _GCS_BUCKET: ''
   _FIREBASE_PROJECT_ID: ''
+  _FIRESTORE_DATABASE_ID: ''
   _VITE_FIREBASE_API_KEY: ''
   _VITE_FIREBASE_AUTH_DOMAIN: ''
   _VITE_FIREBASE_PROJECT_ID: ''
@@ -66,6 +67,13 @@ steps:
       - --region=${_REGION}
       - --platform=managed
       - --allow-unauthenticated
+      # Required for projects under altostrat.com (and similar org policies)
+      # that block IAM grants to allUsers — without this, --allow-unauthenticated
+      # is a silent no-op and every request 403s at the GFE before reaching the
+      # container. Sets run.googleapis.com/invoker-iam-disabled: 'true' on the
+      # service. In projects where allUsers grants are permitted, this is a
+      # belt-and-braces no-op.
+      - --no-invoker-iam-check
       - --port=8080
-      - --set-env-vars=GCS_BUCKET=${_GCS_BUCKET},FIREBASE_PROJECT_ID=${_FIREBASE_PROJECT_ID}
+      - --set-env-vars=GCS_BUCKET=${_GCS_BUCKET},FIREBASE_PROJECT_ID=${_FIREBASE_PROJECT_ID},FIRESTORE_DATABASE_ID=${_FIRESTORE_DATABASE_ID}
       - --set-secrets=GEMINI_API_KEY=gemini-api-key:latest
