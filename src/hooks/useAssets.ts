@@ -1,47 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { getAsset } from '../lib/AssetManager';
 
 export function useAssets(keys: string[]) {
+  const memoKeys = useMemo(() => keys, [keys.join('|')]);
   const [assets, setAssets] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
-  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     let mounted = true;
-
-    async function loadAssets() {
-      setLoading(true);
-      setProgress(0);
-      const loadedAssets: Record<string, string> = {};
-      
-      let loadedCount = 0;
-      const promises = keys.map(async (key) => {
+    setLoading(true);
+    (async () => {
+      const loaded: Record<string, string> = {};
+      await Promise.all(memoKeys.map(async (k) => {
         try {
-          const url = await getAsset(key as any);
-          loadedAssets[key] = url;
+          loaded[k] = await getAsset(k);
         } catch (e) {
-          console.error(`Error loading asset ${key}:`, e);
+          console.error(`Asset load failed: ${k}`, e);
         }
-        loadedCount++;
-        if (mounted) {
-          setProgress(Math.round((loadedCount / keys.length) * 100));
-        }
-      });
-
-      await Promise.all(promises);
-
+      }));
       if (mounted) {
-        setAssets(prev => ({ ...prev, ...loadedAssets }));
+        setAssets(prev => ({ ...prev, ...loaded }));
         setLoading(false);
       }
-    }
+    })();
+    return () => { mounted = false; };
+  }, [memoKeys]);
 
-    loadAssets();
-
-    return () => {
-      mounted = false;
-    };
-  }, [keys.join(',')]);
-
-  return { assets, loading, progress };
+  return { assets, loading };
 }

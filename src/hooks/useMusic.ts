@@ -7,30 +7,19 @@ export function useMusic(theme: string, gameType: string) {
 
   useEffect(() => {
     let mounted = true;
-    let currentUrl: string | null = null;
     setLoading(true);
-
-    getMusic(theme, gameType).then(url => {
-      if (mounted) {
-        setMusicUrl(url);
-        currentUrl = url;
-        setLoading(false);
-      } else if (url) {
-        URL.revokeObjectURL(url);
-      }
-    }).catch(err => {
-      console.error("Failed to load music:", err);
-      if (mounted) {
-        setLoading(false);
-      }
-    });
-
-    return () => {
-      mounted = false;
-      if (currentUrl) {
-        URL.revokeObjectURL(currentUrl);
-      }
-    };
+    getMusic(theme, gameType)
+      .then((url) => {
+        if (mounted) {
+          setMusicUrl(url);
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.error('Music load failed:', err);
+        if (mounted) setLoading(false);
+      });
+    return () => { mounted = false; };
   }, [theme, gameType]);
 
   return { musicUrl, loading };
