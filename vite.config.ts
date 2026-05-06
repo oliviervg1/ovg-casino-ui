@@ -1,24 +1,23 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig, loadEnv} from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 
-export default defineConfig(({mode}) => {
-  const env = loadEnv(mode, '.', '');
+function stripCesIfDisabled(): Plugin {
   return {
-    plugins: [react(), tailwindcss()],
-    define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-    },
-    resolve: {
-      alias: {
-        '@': path.resolve(__dirname, '.'),
-      },
-    },
-    server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
-      hmr: process.env.DISABLE_HMR !== 'true',
+    name: 'strip-ces-if-disabled',
+    transformIndexHtml(html, ctx) {
+      const enabled = !!ctx.server || !!process.env.VITE_CES_DEPLOYMENT_ID;
+      if (enabled) return html;
+      return html.replace(/<!--__CES_BLOCK_START__-->[\s\S]*?<!--__CES_BLOCK_END__-->/, '');
     },
   };
+}
+
+export default defineConfig({
+  plugins: [react(), tailwindcss(), stripCesIfDisabled()],
+  resolve: { alias: { '@': path.resolve(__dirname, '.') } },
+  server: {
+    proxy: { '/api': { target: 'http://localhost:8080', changeOrigin: true } },
+  },
 });

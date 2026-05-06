@@ -3,25 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="https://www.gstatic.com/ces-console/fast/ces-messenger/ces-messenger.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/handlebars@latest/dist/handlebars.js"></script>
     <title>OVG Casino</title>
   </head>
   <body>
 
     <div id="root"></div>
 
+    <!--__CES_BLOCK_START__-->
+    <script src="https://www.gstatic.com/ces-console/fast/ces-messenger/ces-messenger.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/handlebars@latest/dist/handlebars.js"></script>
     <ces-messenger
       style="position: relative; z-index: 9999;"
-      deployment-id="projects/620047628872/locations/us/apps/c4242f9c-3b93-4c92-a69c-a035daabc0c8/deployments/c467644b-872c-4a2d-a2e3-e882770d8cba"
-      chat-title="Casino Concierge"
-      token-broker-url="https://ces-token-broker-y4zvagwaqa-uc.a.run.app"
-      theme-id="dark"
-      auto-open-chat=false
+      deployment-id="%VITE_CES_DEPLOYMENT_ID%"
+      chat-title="%VITE_CES_CHAT_TITLE%"
+      token-broker-url="%VITE_CES_TOKEN_BROKER_URL%"
+      theme-id="%VITE_CES_THEME_ID%"
+      auto-open-chat="false"
       initial-message="Hello"
-      custom-css="* { font-family: 'Inter', sans-serif !important; } main { background: #1e293b !important; } main.dark { position: fixed; bottom: 30px; width: 450px; height: 50%; } @media screen and (max-width: 768px) {:is(.voice-assistant-container,.voice-assistant-container.small) .assistant-container main[data-v-e101b5f4] { height: 75%; width: 100%; }} header, h1 { font-family: 'Righteous', sans-serif !important; } .assistant-container { height: 50%; }"
     ></ces-messenger>
-
     <script>
       window.addEventListener('ces-messenger-loaded', () => {
         const cesMessenger = document.querySelector('ces-messenger');
@@ -137,9 +136,9 @@
         }
       });
     </script>
+    <!--__CES_BLOCK_END__-->
 
     <script type="module" src="/src/main.tsx"></script>
 
   </body>
 </html>
-
