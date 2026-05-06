@@ -22,7 +22,7 @@ export async function generateImage(req: ImageRequest): Promise<GeneratedAsset> 
     model: 'gemini-3.1-flash-image-preview',
     contents: { parts: [{ text: req.prompt }] },
     config: {
-      imageConfig: { aspectRatio: req.aspectRatio as any, imageSize: '512' },
+      imageConfig: { aspectRatio: req.aspectRatio, imageSize: '512' },
     },
   });
   const parts = response.candidates?.[0]?.content?.parts ?? [];
@@ -40,7 +40,7 @@ export async function generateImage(req: ImageRequest): Promise<GeneratedAsset> 
 export async function generateMusic(req: MusicRequest): Promise<GeneratedAsset> {
   const ai = new GoogleGenAI({ apiKey: req.apiKey });
   const stream = await ai.models.generateContentStream({
-    model: 'lyria-3-pro',
+    model: 'lyria-3-pro-preview',
     contents: req.prompt,
   });
   const chunks: Buffer[] = [];
