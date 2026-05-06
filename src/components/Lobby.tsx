@@ -28,7 +28,7 @@ export function Lobby({ onSelectGame }: LobbyProps) {
     });
     return keys;
   }, [themes]);
-  const { assets, loading, progress } = useAssets(assetKeys);
+  const { assets, loading } = useAssets(assetKeys);
 
   const games = useMemo(() => themes.flatMap(theme => {
     const rouletteDef = GAME_REGISTRY.find(g => g.type === 'roulette' && g.theme === theme.id);
@@ -104,13 +104,6 @@ export function Lobby({ onSelectGame }: LobbyProps) {
       <div className="max-w-4xl mx-auto mt-12 flex flex-col items-center justify-center min-h-[50vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-theme-primary mb-6"></div>
         <p className="text-xl opacity-80 animate-pulse mb-4 text-center">Generating unique game assets using Google Cloud AI</p>
-        <div className="w-64 h-2 bg-white/10 rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-theme-primary transition-all duration-300 ease-out"
-            style={{ width: `${progress}%` }}
-          ></div>
-        </div>
-        <p className="mt-2 text-sm opacity-60">{progress}%</p>
       </div>
     );
   }

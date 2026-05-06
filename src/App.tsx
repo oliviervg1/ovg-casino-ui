@@ -79,7 +79,7 @@ function AppContent() {
   
   const bgKey = 'bg_main';
   
-  const { assets, loading: bgLoading, progress: bgProgress } = useAssets([bgKey]);
+  const { assets, loading: bgLoading } = useAssets([bgKey]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', currentTheme);
@@ -168,12 +168,6 @@ function AppContent() {
           <div className="flex flex-col items-center">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white mb-4"></div>
             <p className="text-white/80 text-sm animate-pulse mb-2 text-center">Generating unique game assets using Google Cloud AI</p>
-            <div className="w-48 h-1.5 bg-white/20 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-white transition-all duration-300 ease-out"
-                style={{ width: `${bgProgress}%` }}
-              ></div>
-            </div>
           </div>
         </div>
       )}
