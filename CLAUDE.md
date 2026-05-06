@@ -65,9 +65,9 @@ Both error classes live in `src/lib/errors.ts` and are re-exported from both `As
 
 `server/lib/prompts.ts` defines `ASSET_PROMPTS` and `MUSIC_PROMPTS` as static maps. Routes validate `:key` (and `:theme/:gameType`) with `Object.prototype.hasOwnProperty.call(map, key)` — the `.call` form is intentional, to avoid `__proto__` lookup abuse. **No user-supplied text ever reaches Gemini.** Object names (`assets/v1/users/<uid>/<key>.png`) are safe by construction: `<uid>` is from a verified Firebase token; `<key>` is from a closed map.
 
-### Adding a theme = touch six places
+### Adding a theme = touch seven places
 
-Themes appear in six locations and missing one silently breaks the new theme (404s on the API, doesn't appear in the lobby, slots reels render `❓`). For each new theme add:
+Themes appear in seven locations and missing one silently breaks the new theme (404s on the API, doesn't appear in the lobby, slots reels render `❓`). For each new theme add:
 
 1. `server/lib/prompts.ts` — 10 `ASSET_PROMPTS` keys (3 game pictograms + 4 symbols + 3 backgrounds) and 3 `MUSIC_PROMPTS` keys.
 2. `src/utils/themeStyles.ts` — push to `lightThemes` or `darkThemes`; add a `getThemeStyles()` entry.
@@ -83,7 +83,14 @@ Themes appear in six locations and missing one silently breaks the new theme (40
 
 - Server uses `firebase-admin` with Application Default Credentials. On Cloud Run, the project ID auto-detects via `GOOGLE_CLOUD_PROJECT`; locally, set `FIREBASE_PROJECT_ID` only if your ADC has no project.
 - Client uses the modular `firebase` SDK initialised in `src/firebase.ts`. `VITE_FIREBASE_*` values are baked into the bundle at build time and are not secret — auth is enforced server-side by token verification and by `firestore.rules`.
-- Signed URLs are produced via `iamcredentials.signBlob` (the `roles/iam.serviceAccountTokenCreator` self-grant on the runtime SA). **No service-account key file lives in the repo.**
+- Signed URLs are produced via `iamcredentials.signBlob`. On Cloud Run the runtime SA signs as itself (`roles/iam.serviceAccountTokenCreator` self-grant). **For local dev with user ADC**, signing fails with `Not found; Gaia id not found for email <user>` because user creds have no SA identity — set `SIGNER_SA_EMAIL=<sa>` (typically the project's default Compute SA) and `server/lib/storage.ts` wraps the client in `google-auth-library`'s `Impersonated`. The user must hold `roles/iam.serviceAccountTokenCreator` on that SA (granted by `deploy.sh setup`). **No service-account key file lives in the repo.**
+- `FIRESTORE_DATABASE_ID` (optional): when set, server uses `getFirestore(app, dbId)` instead of the default DB. Production targets `ovg-casino`; `firebase.json`'s `database` field must match for `firebase deploy --only firestore:rules` to land on the right DB.
+
+### Local dev gotchas (Cloud Shell, Codespaces, etc.)
+
+- **Auth header:** client sends `X-Firebase-Token` (custom header), not `Authorization: Bearer`. Cloud Shell's web-preview reverse proxy intercepts `Authorization` headers (treats them as Google IAM bearer tokens, fails to verify, and 302s to `ssh.cloud.google.com/cloudshell/jwt` — which has no CORS headers, so the browser surfaces it as a generic CORS error). `verifyFirebaseToken` accepts either header for ad-hoc curl/testing — don't drop the custom path.
+- **Vite `allowedHosts`:** `vite.config.ts` allowlists `.cloudshell.dev`. Vite 5.4+ blocks unknown `Host` headers as DNS-rebinding mitigation. If you dev from another remote host (Codespaces, ngrok), add it here.
+- **`bg_main` waits for auth:** `App.tsx` passes `enabled: !!user` to `useAssets([bgKey])`. Without that gate the effect fires before Firebase auth resolves, `AssetManager` throws `not_authenticated`, and the effect never retries (its dep is `memoKeys`, which doesn't change with auth state).
 
 ### Firestore rules
 
@@ -100,6 +107,12 @@ Themes appear in six locations and missing one silently breaks the new theme (40
 ## Deploy flow
 
 `./deploy/deploy.sh deploy` runs `npm test` locally → `gcloud builds submit` with `deploy/cloudbuild.yaml`. Cloud Build does a Docker multi-stage build (the `VITE_FIREBASE_*` and `VITE_CES_*` values are baked in via `--build-arg`), pushes to Artifact Registry, and deploys to Cloud Run with `--set-secrets=GEMINI_API_KEY=gemini-api-key:latest`.
+
+Two `gcloud run deploy` flags are load-bearing for this org and project:
+- `--no-invoker-iam-check`: the altostrat.com org has an `iam.allowedPolicyMemberDomains` constraint that blocks `allUsers` IAM grants, making `--allow-unauthenticated` a silent no-op. Without `--no-invoker-iam-check`, every request 403s at the GFE before reaching the container.
+- `--condition=None` on every IAM binding in `deploy.sh setup`: required when the project's IAM policy already contains conditional bindings; gcloud refuses to add an unconditional binding implicitly in non-interactive mode.
+
+The unauthenticated health check is `/_healthz` (underscore prefix). Cloud Run reserves `/healthz` as a Knative probe path under invoker-iam-disabled mode and 404s it at the GFE before reaching the container — don't rename it back.
 
 `deploy/.env.deploy` (gitignored, copied from `deploy/.env.deploy.example`) holds the substitutions. CES Messenger vars are optional — `vite.config.ts` `stripCesIfDisabled` plugin removes the `<ces-messenger>` block from `index.html` at build time when `VITE_CES_DEPLOYMENT_ID` is empty.
 
