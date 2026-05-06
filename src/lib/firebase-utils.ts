@@ -28,8 +28,22 @@ export interface FirestoreErrorInfo {
   }
 }
 
-export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo: FirestoreErrorInfo = {
+export class FirestoreOperationError extends Error {
+  operationType: OperationType;
+  path: string | null;
+  authInfo: FirestoreErrorInfo['authInfo'];
+
+  constructor(info: FirestoreErrorInfo) {
+    super(info.error);
+    this.name = 'FirestoreOperationError';
+    this.operationType = info.operationType;
+    this.path = info.path;
+    this.authInfo = info.authInfo;
+  }
+}
+
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null): never {
+  const info: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
       userId: auth.currentUser?.uid,
@@ -41,12 +55,12 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
         providerId: provider.providerId,
         displayName: provider.displayName,
         email: provider.email,
-        photoUrl: provider.photoURL
-      })) || []
+        photoUrl: provider.photoURL,
+      })) || [],
     },
     operationType,
-    path
+    path,
   };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+  console.error('Firestore Error:', info);
+  throw new FirestoreOperationError(info);
 }
