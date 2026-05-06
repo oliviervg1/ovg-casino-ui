@@ -15,6 +15,12 @@ service cloud.firestore {
     //   - balance: number (required) - The user's virtual balance
     //   - theme: string (required) - The user's preferred theme ('light' or 'dark')
     //
+    // Collection: regen_quota
+    // Document ID: {uid}
+    // Fields (server-written via Admin SDK only — clients are deny-all):
+    //   - date: string (required) - Today's UTC date as 'YYYY-MM-DD'
+    //   - count: number (required) - POST /regenerate calls today
+    //
     // ===============================================================
 
     // ===============================================================

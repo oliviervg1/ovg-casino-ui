@@ -13,7 +13,10 @@ import { verifyFirebaseToken } from './middleware/auth.js';
 import { errorHandler } from './middleware/errors.js';
 
 if (admin.apps.length === 0) {
-  admin.initializeApp();
+  // Pass projectId only if explicitly configured; otherwise let firebase-admin
+  // auto-detect via GOOGLE_CLOUD_PROJECT (set by Cloud Run automatically).
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  admin.initializeApp(projectId ? { projectId } : undefined);
 }
 
 export function createApp(): Express {

@@ -71,4 +71,16 @@ describe('config loader', () => {
     const { loadConfig } = await import('./config.js');
     expect(() => loadConfig()).toThrow(/PORT/);
   });
+
+  it('FIREBASE_PROJECT_ID is optional (firebase-admin auto-detects on Cloud Run)', async () => {
+    process.env.GCS_BUCKET = 'b';
+    process.env.GEMINI_API_KEY = 'k';
+    // FIREBASE_PROJECT_ID intentionally not set
+    const { loadConfig } = await import('./config.js');
+    const cfg = loadConfig();
+    expect(cfg.firebaseProjectId).toBeUndefined();
+    // Other required vars still loaded.
+    expect(cfg.gcsBucket).toBe('b');
+    expect(cfg.geminiApiKey).toBe('k');
+  });
 });

@@ -61,6 +61,11 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     operationType,
     path,
   };
-  console.error('Firestore Error:', info);
+  // Log only the upstream error message; the authInfo block (email,
+  // photoURL, providers) is PII and the developer console is captured
+  // by extensions, screen-recorders, and support-ticket screenshots.
+  // The structured fields are preserved on the thrown error for callers
+  // that genuinely need them.
+  console.error('Firestore Error:', { operationType, path, error: info.error });
   throw new FirestoreOperationError(info);
 }

@@ -125,9 +125,9 @@ export function Rules({ onBack }: RulesProps) {
         <div className="mt-8 p-6 rounded-2xl bg-theme-primary/10 border border-theme-primary/20 flex items-start gap-4">
           <AlertCircle className="w-6 h-6 text-theme-primary flex-shrink-0 mt-1" />
           <div>
-            <h4 className="font-bold text-lg mb-1">Fair Play Guarantee</h4>
+            <h4 className="font-bold text-lg mb-1">Prototype Notice</h4>
             <p className="text-sm opacity-80 leading-relaxed">
-              All games at OVG Casino use a cryptographically secure Pseudo-Random Number Generator (PRNG) to ensure that every spin, draw, and outcome is completely random and independent of previous results.
+              OVG Casino is a prototype. Game outcomes are computed in your browser using <code className="px-1 rounded bg-black/20">Math.random()</code> (not a cryptographically secure PRNG), and balances are tracked in Firestore as virtual currency with no real-money exchange. Don't expect competition-grade fairness guarantees.
             </p>
           </div>
         </div>
