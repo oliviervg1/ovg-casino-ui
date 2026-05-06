@@ -92,6 +92,38 @@ describe('readOrGenerateGlobal', () => {
     })).rejects.toThrow('upstream');
     expect(storage.uploadObject).not.toHaveBeenCalled();
   });
+
+  it('after upload succeeds but signUrl fails, next call recovers via cache hit', async () => {
+    const storage = makeStorage();
+    // First call: HEAD miss → generate → upload OK → signUrl rejects.
+    (storage.headObject as any).mockResolvedValueOnce(false);
+    (storage.signUrl as any).mockRejectedValueOnce(new Error('signing service down'));
+    const gen1 = vi.fn().mockResolvedValueOnce({ bytes: Buffer.from('img'), mimeType: 'image/png' });
+    const { readOrGenerateGlobal } = await import('./cache.js');
+    await expect(readOrGenerateGlobal({
+      storage,
+      objectName: 'assets/v1/global/k.png',
+      contentType: 'image/png',
+      ttlSec: 3600,
+      generator: gen1,
+    })).rejects.toThrow('signing service down');
+    expect(storage.uploadObject).toHaveBeenCalledOnce();
+    // Object is now in GCS even though the caller saw an error.
+
+    // Second call: HEAD hit (object is there) → sign succeeds → no regeneration.
+    (storage.headObject as any).mockResolvedValueOnce(true);
+    (storage.signUrl as any).mockResolvedValueOnce('https://signed/recovered');
+    const gen2 = vi.fn();
+    const url = await readOrGenerateGlobal({
+      storage,
+      objectName: 'assets/v1/global/k.png',
+      contentType: 'image/png',
+      ttlSec: 3600,
+      generator: gen2,
+    });
+    expect(url).toBe('https://signed/recovered');
+    expect(gen2).not.toHaveBeenCalled();
+  });
 });
 
 describe('regenerateShadow', () => {
