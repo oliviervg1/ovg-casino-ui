@@ -1,5 +1,6 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import { createRegenLimit } from '../middleware/regenLimit.js';
+import { consumeGenerationToken } from '../middleware/genLimit.js';
 import { MUSIC_PROMPTS } from '../lib/prompts.js';
 import { createStorage } from '../lib/storage.js';
 import { generateMusic } from '../lib/gemini.js';
@@ -8,8 +9,8 @@ import { loadConfig } from '../lib/config.js';
 
 export function createMusicRouter() {
   const config = loadConfig();
-  const storage = createStorage(config.gcsBucket);
-  const regenLimit = createRegenLimit({ limitPerDay: config.regenLimitPerDay });
+  const storage = createStorage(config.gcsBucket, config.signerSaEmail);
+  const regenLimit = createRegenLimit({ limitPerDay: config.regenLimitPerDay, databaseId: config.firestoreDatabaseId });
   const router = Router();
 
   router.get('/:theme/:gameType', async (req: Request, res: Response, next: NextFunction) => {
@@ -35,7 +36,11 @@ export function createMusicRouter() {
         objectName: globalName,
         contentType: 'audio/wav',
         ttlSec: config.signedUrlTtlSec,
-        generator: () => generateMusic({ apiKey: config.geminiApiKey, prompt: MUSIC_PROMPTS[key] }),
+        // Token consumed only on cache miss (when we actually call Lyria).
+        generator: () => {
+          consumeGenerationToken(uid, config.rateLimitRpm);
+          return generateMusic({ apiKey: config.geminiApiKey, prompt: MUSIC_PROMPTS[key] });
+        },
       });
       res.json({ url, expiresAt: Date.now() + config.signedUrlTtlSec * 1000 });
     } catch (err) {
@@ -58,7 +63,11 @@ export function createMusicRouter() {
         objectName: shadowName,
         contentType: 'audio/wav',
         ttlSec: config.signedUrlTtlSec,
-        generator: () => generateMusic({ apiKey: config.geminiApiKey, prompt: MUSIC_PROMPTS[key] }),
+        // POST /regenerate always generates.
+        generator: () => {
+          consumeGenerationToken(uid, config.rateLimitRpm);
+          return generateMusic({ apiKey: config.geminiApiKey, prompt: MUSIC_PROMPTS[key] });
+        },
       });
       res.json({ url, expiresAt: Date.now() + config.signedUrlTtlSec * 1000 });
     } catch (err) {

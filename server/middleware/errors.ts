@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
+import { GenerationRateLimitError } from './genLimit.js';
 
 // Patterns that should never reach Cloud Logging. Cloud Logging access
 // (roles/logging.viewer) is broader than Secret Manager access, and key
@@ -23,6 +24,12 @@ export function redact(s: string | undefined): string | undefined {
 export function errorHandler(err: Error, req: Request, res: Response, next: NextFunction) {
   if (res.headersSent) {
     next(err);
+    return;
+  }
+  if (err instanceof GenerationRateLimitError) {
+    res.set('Retry-After', String(err.retryAfterSec))
+      .status(429)
+      .json({ error: 'rate_limit' });
     return;
   }
   // Log the real error server-side, with key/token patterns redacted; never

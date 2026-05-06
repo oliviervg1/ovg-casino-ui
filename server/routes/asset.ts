@@ -1,5 +1,6 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import { createRegenLimit } from '../middleware/regenLimit.js';
+import { consumeGenerationToken } from '../middleware/genLimit.js';
 import { ASSET_PROMPTS } from '../lib/prompts.js';
 import { createStorage } from '../lib/storage.js';
 import { generateImage } from '../lib/gemini.js';
@@ -12,8 +13,8 @@ function aspectFor(key: string): '1:1' | '16:9' {
 
 export function createAssetRouter() {
   const config = loadConfig();
-  const storage = createStorage(config.gcsBucket);
-  const regenLimit = createRegenLimit({ limitPerDay: config.regenLimitPerDay });
+  const storage = createStorage(config.gcsBucket, config.signerSaEmail);
+  const regenLimit = createRegenLimit({ limitPerDay: config.regenLimitPerDay, databaseId: config.firestoreDatabaseId });
   const router = Router();
 
   router.get('/:key', async (req: Request, res: Response, next: NextFunction) => {
@@ -38,7 +39,12 @@ export function createAssetRouter() {
         objectName: globalName,
         contentType: 'image/png',
         ttlSec: config.signedUrlTtlSec,
-        generator: () => generateImage({ apiKey: config.geminiApiKey, prompt: ASSET_PROMPTS[key], aspectRatio: aspectFor(key) }),
+        // Wrap so the rate-limit token is consumed only when we're actually
+        // about to call Gemini (cache miss). Cache hits never reach here.
+        generator: () => {
+          consumeGenerationToken(uid, config.rateLimitRpm);
+          return generateImage({ apiKey: config.geminiApiKey, prompt: ASSET_PROMPTS[key], aspectRatio: aspectFor(key) });
+        },
       });
       res.json({ url, expiresAt: Date.now() + config.signedUrlTtlSec * 1000 });
     } catch (err) {
@@ -60,7 +66,11 @@ export function createAssetRouter() {
         objectName: shadowName,
         contentType: 'image/png',
         ttlSec: config.signedUrlTtlSec,
-        generator: () => generateImage({ apiKey: config.geminiApiKey, prompt: ASSET_PROMPTS[key], aspectRatio: aspectFor(key) }),
+        // POST /regenerate always generates; consume one token per call.
+        generator: () => {
+          consumeGenerationToken(uid, config.rateLimitRpm);
+          return generateImage({ apiKey: config.geminiApiKey, prompt: ASSET_PROMPTS[key], aspectRatio: aspectFor(key) });
+        },
       });
       res.json({ url, expiresAt: Date.now() + config.signedUrlTtlSec * 1000 });
     } catch (err) {

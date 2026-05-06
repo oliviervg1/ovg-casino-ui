@@ -1,8 +1,12 @@
 import type { Request, Response, NextFunction } from 'express';
 import admin from 'firebase-admin';
+import { getFirestore } from 'firebase-admin/firestore';
 
 export interface RegenLimitOptions {
   limitPerDay: number;
+  // When set, target a named Firestore database via getFirestore(app, id);
+  // otherwise admin.firestore() (the (default) database) is used.
+  databaseId?: string;
 }
 
 interface QuotaDoc { date: string; count: number; }
@@ -31,7 +35,7 @@ export function createRegenLimit(opts: RegenLimitOptions) {
       return;
     }
 
-    const db = admin.firestore();
+    const db = opts.databaseId ? getFirestore(admin.app(), opts.databaseId) : admin.firestore();
     const ref = db.collection('regen_quota').doc(uid);
     const today = todayUtc();
 

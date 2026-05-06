@@ -27,17 +27,17 @@ vi.mock('./routes/music.js', () => ({ createMusicRouter: () => (_req: any, _res:
 describe('server bootstrap', () => {
   beforeEach(() => vi.resetModules());
 
-  it('GET /healthz returns 200 unauthenticated', async () => {
+  it('GET /_healthz returns 200 unauthenticated', async () => {
     const { createApp } = await import('./index.js');
     const app = createApp();
-    const res = await request(app).get('/healthz');
+    const res = await request(app).get('/_healthz');
     expect(res.status).toBe(200);
   });
 
   it('serves Helmet headers on responses', async () => {
     const { createApp } = await import('./index.js');
     const app = createApp();
-    const res = await request(app).get('/healthz');
+    const res = await request(app).get('/_healthz');
     expect(res.headers['x-content-type-options']).toBe('nosniff');
     expect(res.headers['referrer-policy']).toBe('no-referrer');
   });
@@ -45,7 +45,7 @@ describe('server bootstrap', () => {
   it('CSP allowlists GCS, Google avatars, Firebase, and CES origins', async () => {
     const { createApp } = await import('./index.js');
     const app = createApp();
-    const res = await request(app).get('/healthz');
+    const res = await request(app).get('/_healthz');
     const csp = res.headers['content-security-policy'] ?? '';
     expect(csp).toMatch(/img-src[^;]*storage\.googleapis\.com/);
     expect(csp).toMatch(/img-src[^;]*lh3\.googleusercontent\.com/);
@@ -58,7 +58,7 @@ describe('server bootstrap', () => {
   it('sets Cross-Origin-Opener-Policy to allow Firebase popup login', async () => {
     const { createApp } = await import('./index.js');
     const app = createApp();
-    const res = await request(app).get('/healthz');
+    const res = await request(app).get('/_healthz');
     expect(res.headers['cross-origin-opener-policy']).toBe('same-origin-allow-popups');
   });
 

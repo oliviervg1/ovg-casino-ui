@@ -1,7 +1,6 @@
 import express, { type Express, type Request, type Response, type NextFunction } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
-import rateLimit from 'express-rate-limit';
 import admin from 'firebase-admin';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -62,27 +61,19 @@ export function createApp(): Express {
   app.use(cors({ origin: false }));
   app.use(express.json());
 
-  app.get('/healthz', (_req, res) => {
+  // Underscore-prefixed to avoid Cloud Run's Knative-default /healthz probe
+  // path interception, which causes /healthz requests to be 404'd at the GFE
+  // before reaching the container.
+  app.get('/_healthz', (_req, res) => {
     res.status(200).send('ok');
   });
 
-  // Per-uid 429 (per-minute window). Mounted AFTER verifyFirebaseToken so
-  // req.uid is set; the IP fallback is defence-in-depth (auth would already
-  // have returned 401 if no token were present).
-  const apiLimiter = rateLimit({
-    windowMs: 60_000,
-    limit: config.rateLimitRpm,
-    standardHeaders: true,
-    legacyHeaders: false,
-    keyGenerator: (req) => req.uid ?? req.ip ?? 'anon',
-    handler: (_req, res) => {
-      res.status(429).json({ error: 'rate_limit' });
-    },
-  });
-
-  // Authenticated API: auth → per-uid limit → router.
-  app.use('/api/asset', verifyFirebaseToken, apiLimiter, createAssetRouter());
-  app.use('/api/music', verifyFirebaseToken, apiLimiter, createMusicRouter());
+  // Authenticated API. The per-uid generation rate limit (config.rateLimitRpm)
+  // is enforced inside route handlers around the Gemini/Lyria call sites,
+  // not here — cache-hit fetches (HEAD + sign existing GCS object) shouldn't
+  // count against the user's quota.
+  app.use('/api/asset', verifyFirebaseToken, createAssetRouter());
+  app.use('/api/music', verifyFirebaseToken, createMusicRouter());
 
   // Anything else under /api/* is a typo or missing route — return JSON 404
   // BEFORE the SPA catch-all so we don't serve index.html with status 200.
