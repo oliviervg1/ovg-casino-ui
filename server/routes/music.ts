@@ -15,8 +15,7 @@ export function createMusicRouter() {
 
   router.get('/:theme/:gameType', verifyFirebaseToken, async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const theme = req.params.theme as string;
-      const gameType = req.params.gameType as string;
+      const { theme, gameType } = req.params as { theme: string; gameType: string };
       const key = `${theme}_${gameType}`;
       if (!Object.prototype.hasOwnProperty.call(MUSIC_PROMPTS, key)) {
         res.status(400).json({ error: 'unknown_key' });
@@ -47,8 +46,7 @@ export function createMusicRouter() {
 
   router.post('/:theme/:gameType/regenerate', verifyFirebaseToken, regenLimit, async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const theme = req.params.theme as string;
-      const gameType = req.params.gameType as string;
+      const { theme, gameType } = req.params as { theme: string; gameType: string };
       const key = `${theme}_${gameType}`;
       if (!Object.prototype.hasOwnProperty.call(MUSIC_PROMPTS, key)) {
         res.status(400).json({ error: 'unknown_key' });

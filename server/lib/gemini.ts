@@ -22,6 +22,8 @@ export async function generateImage(req: ImageRequest): Promise<GeneratedAsset> 
     model: 'gemini-3.1-flash-image-preview',
     contents: { parts: [{ text: req.prompt }] },
     config: {
+      // imageSize '512' is supported per the SDK's internal ImageConfig_2
+      // type (~5x cheaper than the publicly-documented '1K'/'2K'/'4K').
       imageConfig: { aspectRatio: req.aspectRatio, imageSize: '512' },
     },
   });

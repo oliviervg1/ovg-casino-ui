@@ -19,7 +19,7 @@ export function createAssetRouter() {
 
   router.get('/:key', verifyFirebaseToken, async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const key = req.params.key as string;
+      const { key } = req.params as { key: string };
       if (!Object.prototype.hasOwnProperty.call(ASSET_PROMPTS, key)) {
         res.status(400).json({ error: 'unknown_key' });
         return;
@@ -49,7 +49,7 @@ export function createAssetRouter() {
 
   router.post('/:key/regenerate', verifyFirebaseToken, regenLimit, async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const key = req.params.key as string;
+      const { key } = req.params as { key: string };
       if (!Object.prototype.hasOwnProperty.call(ASSET_PROMPTS, key)) {
         res.status(400).json({ error: 'unknown_key' });
         return;

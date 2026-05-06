@@ -40,7 +40,7 @@ export function createApp(): Express {
     limit: config.rateLimitRpm,
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req) => (req as any).uid ?? req.ip ?? 'anon',
+    keyGenerator: (req) => req.uid ?? req.ip ?? 'anon',
   });
 
   app.use('/api/asset', apiLimiter, createAssetRouter());
