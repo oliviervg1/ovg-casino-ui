@@ -13,7 +13,9 @@ async function authHeader(): Promise<HeadersInit> {
   const user = auth.currentUser;
   if (!user) throw new Error('not_authenticated');
   const token = await user.getIdToken();
-  return { Authorization: `Bearer ${token}` };
+  // Custom header (not Authorization) so Cloud Shell web-preview's reverse
+  // proxy doesn't intercept the request and redirect to its JWT auth flow.
+  return { 'X-Firebase-Token': token };
 }
 
 function memoFresh(entry: MemoEntry | undefined): entry is MemoEntry {

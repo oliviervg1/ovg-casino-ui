@@ -13,7 +13,7 @@ describe('MusicManager', () => {
     vi.resetModules();
   });
 
-  it('getMusic GETs /api/music/:theme/:gameType with Bearer token', async () => {
+  it('getMusic GETs /api/music/:theme/:gameType with X-Firebase-Token', async () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ url: 'https://signed/m', expiresAt: Date.now() + 3_600_000 }),
@@ -23,7 +23,8 @@ describe('MusicManager', () => {
     expect(url).toBe('https://signed/m');
     const [u, init] = fetchMock.mock.calls[0];
     expect(u).toBe('/api/music/sweets/roulette');
-    expect(init.headers.Authorization).toBe('Bearer id-token-xyz');
+    expect(init.headers['X-Firebase-Token']).toBe('id-token-xyz');
+    expect(init.headers.Authorization).toBeUndefined();
   });
 
   it('memoises within TTL', async () => {

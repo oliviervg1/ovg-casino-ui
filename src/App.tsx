@@ -78,8 +78,12 @@ function AppContent() {
   }
   
   const bgKey = 'bg_main';
-  
-  const { assets, loading: bgLoading } = useAssets([bgKey]);
+
+  // Wait for Firebase auth to resolve before requesting bg_main; AssetManager
+  // throws "not_authenticated" if auth.currentUser is null when getAsset runs,
+  // and the effect's only other dep (memoKeys) doesn't change with auth state,
+  // so without this gate the failed initial fetch would never retry.
+  const { assets, loading: bgLoading } = useAssets([bgKey], { enabled: !!user });
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', currentTheme);

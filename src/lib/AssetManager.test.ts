@@ -13,7 +13,7 @@ describe('AssetManager', () => {
     vi.resetModules();
   });
 
-  it('getAsset GETs /api/asset/:key with Bearer token and returns the URL', async () => {
+  it('getAsset GETs /api/asset/:key with X-Firebase-Token and returns the URL', async () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ url: 'https://signed/x', expiresAt: Date.now() + 3_600_000 }),
@@ -23,7 +23,8 @@ describe('AssetManager', () => {
     expect(url).toBe('https://signed/x');
     const [calledUrl, init] = fetchMock.mock.calls[0];
     expect(calledUrl).toBe('/api/asset/roulette_sweets');
-    expect(init.headers.Authorization).toBe('Bearer id-token-xyz');
+    expect(init.headers['X-Firebase-Token']).toBe('id-token-xyz');
+    expect(init.headers.Authorization).toBeUndefined();
   });
 
   it('second call within TTL returns memoised URL without refetch', async () => {

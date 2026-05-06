@@ -19,5 +19,9 @@ export default defineConfig({
   resolve: { alias: { '@': path.resolve(__dirname, '.') } },
   server: {
     proxy: { '/api': { target: 'http://localhost:8080', changeOrigin: true } },
+    // Vite 5.4+ blocks requests whose Host header isn't on this list
+    // (DNS-rebinding hardening). The leading "." matches all subdomains —
+    // Cloud Shell preview URLs look like 3000-cs-<id>-default.cs-<region>.cloudshell.dev.
+    allowedHosts: ['.cloudshell.dev', 'localhost'],
   },
 });

@@ -1,12 +1,22 @@
 import { useState, useEffect, useMemo } from 'react';
 import { getAsset } from '../lib/AssetManager';
 
-export function useAssets(keys: string[]) {
+export interface UseAssetsOptions {
+  // When false, the effect is a no-op — useful when the caller knows the
+  // asset request will fail (e.g. before Firebase auth has resolved and
+  // AssetManager would throw "not_authenticated"). Once flipped to true the
+  // effect re-runs and the fetch proceeds. Defaults to true for back-compat.
+  enabled?: boolean;
+}
+
+export function useAssets(keys: string[], options: UseAssetsOptions = {}) {
+  const { enabled = true } = options;
   const memoKeys = useMemo(() => keys, [keys.join('|')]);
   const [assets, setAssets] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!enabled) return;
     let mounted = true;
     setLoading(true);
     (async () => {
@@ -24,7 +34,7 @@ export function useAssets(keys: string[]) {
       }
     })();
     return () => { mounted = false; };
-  }, [memoKeys]);
+  }, [memoKeys, enabled]);
 
   return { assets, loading };
 }
