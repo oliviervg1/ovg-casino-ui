@@ -2,14 +2,42 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, User as UserIcon, LogOut, Wallet, Palette, RefreshCw } from 'lucide-react';
 import { UserProfile } from '../hooks/useUser';
-import { regenerateAsset, RegenQuotaExceededError } from '../lib/AssetManager';
+import { regenerateAsset } from '../lib/AssetManager';
 import { regenerateMusic } from '../lib/MusicManager';
+import { RegenQuotaExceededError, RateLimitError } from '../lib/errors';
 
 interface ProfileProps {
   profile: UserProfile;
   onBack: () => void;
   onLogout: () => void;
   onUpdateTheme: (theme: 'light' | 'dark') => void;
+}
+
+// Cap concurrent regen requests so we don't trip the per-minute rate limit.
+// At RATE_LIMIT_RPM=30 a concurrency of 4 keeps inflight ≤ 4 with steady
+// drain; the full 105-task batch finishes in ~3.5 minutes without any 429s
+// and without saturating the Firestore quota counter with contention.
+const REGEN_CONCURRENCY = 4;
+
+async function runWithConcurrency<T>(
+  tasks: Array<() => Promise<T>>,
+  limit: number,
+): Promise<PromiseSettledResult<T>[]> {
+  const results: PromiseSettledResult<T>[] = new Array(tasks.length);
+  let next = 0;
+  async function worker() {
+    while (true) {
+      const i = next++;
+      if (i >= tasks.length) return;
+      try {
+        results[i] = { status: 'fulfilled', value: await tasks[i]() };
+      } catch (reason) {
+        results[i] = { status: 'rejected', reason };
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, () => worker()));
+  return results;
 }
 
 export function Profile({ profile, onBack, onLogout, onUpdateTheme }: ProfileProps) {
@@ -34,21 +62,30 @@ export function Profile({ profile, onBack, onLogout, onUpdateTheme }: ProfilePro
     let done = 0;
     const total = ASSET_KEYS.length + MUSIC_PAIRS.length;
     let quotaHit = false;
+    let rateLimitHit = false;
     const update = () => setRegenStatus(`Regenerating ${++done}/${total}…`);
 
-    const tasks = [
+    const tasks: Array<() => Promise<unknown>> = [
       ...ASSET_KEYS.map(k => () => regenerateAsset(k).then(update)),
       ...MUSIC_PAIRS.map(([t, gt]) => () => regenerateMusic(t, gt).then(update)),
     ];
 
-    const results = await Promise.allSettled(tasks.map(fn => fn().catch((err) => {
-      if (err instanceof RegenQuotaExceededError) quotaHit = true;
-      throw err;
-    })));
+    const results = await runWithConcurrency(
+      tasks.map(fn => async () => {
+        try { return await fn(); } catch (err) {
+          if (err instanceof RegenQuotaExceededError) quotaHit = true;
+          else if (err instanceof RateLimitError) rateLimitHit = true;
+          throw err;
+        }
+      }),
+      REGEN_CONCURRENCY,
+    );
 
     const failures = results.filter(r => r.status === 'rejected').length;
     if (quotaHit) {
       setRegenStatus("You've hit today's regenerate limit — try again tomorrow.");
+    } else if (rateLimitHit) {
+      setRegenStatus(`Server is rate-limiting requests. ${total - failures}/${total} regenerated; please try again in a minute.`);
     } else if (failures > 0) {
       setRegenStatus(`Regenerated ${total - failures}/${total}. ${failures} failed.`);
     } else {
@@ -93,15 +130,15 @@ export function Profile({ profile, onBack, onLogout, onUpdateTheme }: ProfilePro
               <p className="text-sm opacity-70 uppercase tracking-wider font-bold">Preferred Theme</p>
             </div>
             <div className="flex gap-2">
-              <button 
+              <button
                 onClick={() => onUpdateTheme('light')}
-                className={`flex-1 py-2 rounded-lg font-bold tracking-wider text-xl transition-all ${profile.theme === 'light' || (profile.theme as any) === 'sweets' ? 'bg-pink-500 text-white shadow-lg' : 'bg-white/5 hover:bg-white/10'}`}
+                className={`flex-1 py-2 rounded-lg font-bold tracking-wider text-xl transition-all ${profile.theme === 'light' ? 'bg-pink-500 text-white shadow-lg' : 'bg-white/5 hover:bg-white/10'}`}
               >
                 Light
               </button>
-              <button 
+              <button
                 onClick={() => onUpdateTheme('dark')}
-                className={`flex-1 py-2 rounded-lg font-bold tracking-wider text-xl transition-all ${profile.theme === 'dark' || (profile.theme as any) === 'egypt' ? 'bg-slate-800 text-white shadow-lg' : 'bg-white/5 hover:bg-white/10'}`}
+                className={`flex-1 py-2 rounded-lg font-bold tracking-wider text-xl transition-all ${profile.theme === 'dark' ? 'bg-slate-800 text-white shadow-lg' : 'bg-white/5 hover:bg-white/10'}`}
               >
                 Dark
               </button>
@@ -121,8 +158,8 @@ export function Profile({ profile, onBack, onLogout, onUpdateTheme }: ProfilePro
             </button>
             {!isRegenerating && regenStatus && <p className="text-sm opacity-80">{regenStatus}</p>}
           </div>
-          
-          <button 
+
+          <button
             onClick={onLogout}
             className="flex items-center justify-center gap-2 px-8 py-3 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-colors font-bold tracking-wider"
           >

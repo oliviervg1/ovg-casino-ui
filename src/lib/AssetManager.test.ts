@@ -76,9 +76,24 @@ describe('AssetManager', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it('regenerateAsset throws RegenQuotaExceededError on 429', async () => {
+  it('regenerateAsset throws RegenQuotaExceededError on 429 with regen_quota_exceeded body', async () => {
     fetchMock.mockResolvedValueOnce({ ok: false, status: 429, json: async () => ({ error: 'regen_quota_exceeded' }) });
     const { regenerateAsset, RegenQuotaExceededError } = await import('./AssetManager');
     await expect(regenerateAsset('roulette_sweets')).rejects.toBeInstanceOf(RegenQuotaExceededError);
+  });
+
+  it('regenerateAsset throws RateLimitError on 429 with rate_limit body', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 429, json: async () => ({ error: 'rate_limit' }) });
+    const { regenerateAsset, RateLimitError } = await import('./AssetManager');
+    await expect(regenerateAsset('roulette_sweets')).rejects.toBeInstanceOf(RateLimitError);
+  });
+
+  it('cross-module instanceof: RegenQuotaExceededError from MusicManager matches the AssetManager class', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 429, json: async () => ({ error: 'regen_quota_exceeded' }) });
+    const { RegenQuotaExceededError: AssetClass } = await import('./AssetManager');
+    const { regenerateMusic } = await import('./MusicManager');
+    // Music throws MusicManager's RegenQuotaExceededError; instanceof against
+    // AssetManager's class must succeed (single shared class identity).
+    await expect(regenerateMusic('sweets', 'roulette')).rejects.toBeInstanceOf(AssetClass);
   });
 });

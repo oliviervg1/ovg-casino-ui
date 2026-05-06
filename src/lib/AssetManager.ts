@@ -1,11 +1,9 @@
 import { auth } from '../firebase';
+import { RegenQuotaExceededError, classifyRateLimit } from './errors';
 
-export class RegenQuotaExceededError extends Error {
-  constructor() {
-    super('regen_quota_exceeded');
-    this.name = 'RegenQuotaExceededError';
-  }
-}
+// Re-export so existing callers (e.g. Profile.tsx, useAssets) keep working
+// after the class moved to ./errors.ts.
+export { RegenQuotaExceededError, RateLimitError } from './errors';
 
 interface MemoEntry { url: string; expiresAt: number; }
 const memo = new Map<string, MemoEntry>();
@@ -27,6 +25,7 @@ export async function getAsset(key: string): Promise<string> {
   if (memoFresh(cached)) return cached.url;
   const headers = await authHeader();
   const res = await fetch(`/api/asset/${encodeURIComponent(key)}`, { headers });
+  if (res.status === 429) throw await classifyRateLimit(res);
   if (!res.ok) throw new Error(`asset_fetch_failed_${res.status}`);
   const data = (await res.json()) as MemoEntry;
   memo.set(key, data);
@@ -36,7 +35,7 @@ export async function getAsset(key: string): Promise<string> {
 export async function regenerateAsset(key: string): Promise<string> {
   const headers = await authHeader();
   const res = await fetch(`/api/asset/${encodeURIComponent(key)}/regenerate`, { method: 'POST', headers });
-  if (res.status === 429) throw new RegenQuotaExceededError();
+  if (res.status === 429) throw await classifyRateLimit(res);
   if (!res.ok) throw new Error(`asset_regen_failed_${res.status}`);
   const data = (await res.json()) as MemoEntry;
   memo.set(key, data);
@@ -47,3 +46,8 @@ export async function regenerateAsset(key: string): Promise<string> {
 export async function preloadAssets(keys: string[]) {
   await Promise.all(keys.map(k => getAsset(k)));
 }
+
+// Re-thrown by the RegenQuotaExceededError class above so the original
+// instanceof references in the rest of the codebase keep working without
+// caring whether the rejection originated in AssetManager or MusicManager.
+// (Both share the same shared class from ./errors.ts.)

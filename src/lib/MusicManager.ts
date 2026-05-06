@@ -1,11 +1,9 @@
 import { auth } from '../firebase';
+import { classifyRateLimit } from './errors';
 
-export class RegenQuotaExceededError extends Error {
-  constructor() {
-    super('regen_quota_exceeded');
-    this.name = 'RegenQuotaExceededError';
-  }
-}
+// Re-export the shared error so callers can import either Manager and the
+// instanceof check works against a single class identity.
+export { RegenQuotaExceededError, RateLimitError } from './errors';
 
 interface MemoEntry { url: string; expiresAt: number; }
 const memo = new Map<string, MemoEntry>();
@@ -33,6 +31,7 @@ export async function getMusic(theme: string, gameType: string): Promise<string 
   const headers = await authHeader();
   const res = await fetch(`/api/music/${encodeURIComponent(theme)}/${encodeURIComponent(gameType)}`, { headers });
   if (res.status === 400) return null;
+  if (res.status === 429) throw await classifyRateLimit(res);
   if (!res.ok) throw new Error(`music_fetch_failed_${res.status}`);
   const data = (await res.json()) as MemoEntry;
   memo.set(k, data);
@@ -45,7 +44,7 @@ export async function regenerateMusic(theme: string, gameType: string): Promise<
     method: 'POST',
     headers,
   });
-  if (res.status === 429) throw new RegenQuotaExceededError();
+  if (res.status === 429) throw await classifyRateLimit(res);
   if (!res.ok) throw new Error(`music_regen_failed_${res.status}`);
   const data = (await res.json()) as MemoEntry;
   memo.set(key(theme, gameType), data);
