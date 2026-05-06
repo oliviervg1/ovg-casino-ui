@@ -1,5 +1,4 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
-import { verifyFirebaseToken } from '../middleware/auth.js';
 import { createRegenLimit } from '../middleware/regenLimit.js';
 import { ASSET_PROMPTS } from '../lib/prompts.js';
 import { createStorage } from '../lib/storage.js';
@@ -17,7 +16,7 @@ export function createAssetRouter() {
   const regenLimit = createRegenLimit({ limitPerDay: config.regenLimitPerDay });
   const router = Router();
 
-  router.get('/:key', verifyFirebaseToken, async (req: Request, res: Response, next: NextFunction) => {
+  router.get('/:key', async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { key } = req.params as { key: string };
       if (!Object.prototype.hasOwnProperty.call(ASSET_PROMPTS, key)) {
@@ -47,7 +46,7 @@ export function createAssetRouter() {
     }
   });
 
-  router.post('/:key/regenerate', verifyFirebaseToken, regenLimit, async (req: Request, res: Response, next: NextFunction) => {
+  router.post('/:key/regenerate', regenLimit, async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { key } = req.params as { key: string };
       if (!Object.prototype.hasOwnProperty.call(ASSET_PROMPTS, key)) {

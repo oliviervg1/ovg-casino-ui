@@ -35,10 +35,12 @@ vi.mock('../lib/config.js', () => ({
 
 async function makeApp() {
   const { createMusicRouter } = await import('./music.js');
+  const { verifyFirebaseToken } = await import('../middleware/auth.js');
   const { errorHandler } = await import('../middleware/errors.js');
   const app = express();
   app.use(express.json());
-  app.use('/api/music', createMusicRouter());
+  // Mirror production wiring: auth at app level, then router.
+  app.use('/api/music', verifyFirebaseToken, createMusicRouter());
   app.use(errorHandler);
   return app;
 }

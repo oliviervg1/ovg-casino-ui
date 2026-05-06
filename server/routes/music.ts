@@ -1,5 +1,4 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
-import { verifyFirebaseToken } from '../middleware/auth.js';
 import { createRegenLimit } from '../middleware/regenLimit.js';
 import { MUSIC_PROMPTS } from '../lib/prompts.js';
 import { createStorage } from '../lib/storage.js';
@@ -13,7 +12,7 @@ export function createMusicRouter() {
   const regenLimit = createRegenLimit({ limitPerDay: config.regenLimitPerDay });
   const router = Router();
 
-  router.get('/:theme/:gameType', verifyFirebaseToken, async (req: Request, res: Response, next: NextFunction) => {
+  router.get('/:theme/:gameType', async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { theme, gameType } = req.params as { theme: string; gameType: string };
       const key = `${theme}_${gameType}`;
@@ -44,7 +43,7 @@ export function createMusicRouter() {
     }
   });
 
-  router.post('/:theme/:gameType/regenerate', verifyFirebaseToken, regenLimit, async (req: Request, res: Response, next: NextFunction) => {
+  router.post('/:theme/:gameType/regenerate', regenLimit, async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { theme, gameType } = req.params as { theme: string; gameType: string };
       const key = `${theme}_${gameType}`;
