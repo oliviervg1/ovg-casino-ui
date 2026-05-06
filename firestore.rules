@@ -73,5 +73,11 @@ service cloud.firestore {
       allow update: if isOwner(userId) && uidNotModified() && isValidUser();
       allow delete: if false; // Users cannot delete their own profile
     }
+
+    // Server-only counter for per-uid daily regen quota.
+    // Admin SDK on the server bypasses these rules; clients cannot tamper.
+    match /regen_quota/{uid} {
+      allow read, write: if false;
+    }
   }
 }
