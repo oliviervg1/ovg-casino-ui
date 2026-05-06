@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, User as UserIcon, LogOut, Wallet, Palette, RefreshCw } from 'lucide-react';
 import { UserProfile } from '../hooks/useUser';
-import { clearAllAssets } from '../lib/AssetManager';
+import { regenerateAsset, RegenQuotaExceededError } from '../lib/AssetManager';
+import { regenerateMusic } from '../lib/MusicManager';
 
 interface ProfileProps {
   profile: UserProfile;
@@ -13,16 +14,47 @@ interface ProfileProps {
 
 export function Profile({ profile, onBack, onLogout, onUpdateTheme }: ProfileProps) {
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [regenStatus, setRegenStatus] = useState<string | null>(null);
+
+  const ASSET_KEYS = [
+    'sweets', 'egypt', 'space', 'west', 'ocean', 'jungle', 'vampire', 'ninja',
+  ].flatMap(theme => [
+    `roulette_${theme}`, `slots_${theme}`, `bingo_${theme}`,
+    `${theme}_1`, `${theme}_2`, `${theme}_3`, `${theme}_4`,
+    `bg_roulette_${theme}`, `bg_slots_${theme}`, `bg_bingo_${theme}`,
+  ]).concat(['bg_main']);
+
+  const MUSIC_PAIRS: Array<[string, string]> = [
+    'sweets', 'egypt', 'space', 'west', 'ocean', 'jungle', 'vampire', 'ninja',
+  ].flatMap(theme => (['roulette', 'slots', 'bingo'] as const).map(gt => [theme, gt] as [string, string]));
 
   const handleRegenerateAssets = async () => {
     setIsRegenerating(true);
-    try {
-      await clearAllAssets();
-      window.location.reload();
-    } catch (error) {
-      console.error('Failed to clear assets:', error);
-      setIsRegenerating(false);
+    setRegenStatus(null);
+    let done = 0;
+    const total = ASSET_KEYS.length + MUSIC_PAIRS.length;
+    let quotaHit = false;
+    const update = () => setRegenStatus(`Regenerating ${++done}/${total}…`);
+
+    const tasks = [
+      ...ASSET_KEYS.map(k => () => regenerateAsset(k).then(update)),
+      ...MUSIC_PAIRS.map(([t, gt]) => () => regenerateMusic(t, gt).then(update)),
+    ];
+
+    const results = await Promise.allSettled(tasks.map(fn => fn().catch((err) => {
+      if (err instanceof RegenQuotaExceededError) quotaHit = true;
+      throw err;
+    })));
+
+    const failures = results.filter(r => r.status === 'rejected').length;
+    if (quotaHit) {
+      setRegenStatus("You've hit today's regenerate limit — try again tomorrow.");
+    } else if (failures > 0) {
+      setRegenStatus(`Regenerated ${total - failures}/${total}. ${failures} failed.`);
+    } else {
+      setRegenStatus(`All ${total} assets regenerated. Reload the page to see them.`);
     }
+    setIsRegenerating(false);
   };
 
   return (
@@ -78,14 +110,17 @@ export function Profile({ profile, onBack, onLogout, onUpdateTheme }: ProfilePro
         </div>
 
         <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row justify-center gap-4">
-          <button 
-            onClick={handleRegenerateAssets}
-            disabled={isRegenerating}
-            className="flex items-center justify-center gap-2 px-8 py-3 rounded-xl bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white transition-colors font-bold tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <RefreshCw className={`w-5 h-5 ${isRegenerating ? 'animate-spin' : ''}`} />
-            {isRegenerating ? 'REGENERATING...' : 'REGENERATE ASSETS'}
-          </button>
+          <div className="flex flex-col items-center gap-2">
+            <button
+              onClick={handleRegenerateAssets}
+              disabled={isRegenerating}
+              className="flex items-center justify-center gap-2 px-8 py-3 rounded-xl bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white transition-colors font-bold tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <RefreshCw className={`w-5 h-5 ${isRegenerating ? 'animate-spin' : ''}`} />
+              {isRegenerating ? (regenStatus ?? 'REGENERATING…') : 'REGENERATE ASSETS'}
+            </button>
+            {!isRegenerating && regenStatus && <p className="text-sm opacity-80">{regenStatus}</p>}
+          </div>
           
           <button 
             onClick={onLogout}
