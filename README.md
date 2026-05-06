@@ -1,20 +1,85 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# OVG Casino
 
-# Run and deploy your AI Studio app
+A virtual-currency casino prototype with AI-generated themed assets and music. Three games (roulette, slots, bingo) across eight themes (sweets, egypt, space, west, ocean, jungle, vampire, ninja). Built on React + Vite, deployed on Google Cloud Run.
 
-This contains everything you need to run your app locally.
+## Architecture
 
-View your app in AI Studio: https://ai.studio/apps/8b897732-18cf-4b66-84d7-dc9df2d8df8a
+```
+Browser ──► Cloud Run (Express + React static)
+              │
+              ├── GET /  + /game/* + /assets/* → static React build (dist/)
+              │
+              ├── GET /healthz → 200
+              │
+              ├── GET /api/asset/:key
+              │   GET /api/music/:theme/:gameType
+              │        → Helmet + auth + rate-limit
+              │        → HEAD users/<uid>/<key>     → hit: sign URL
+              │        → HEAD global/<key>          → hit: sign URL
+              │        → miss: lock, call Gemini, upload to global, sign URL
+              │
+              └── POST /api/asset/:key/regenerate
+                  POST /api/music/:theme/:gameType/regenerate
+                       → auth + per-uid daily quota (Firestore counter)
+                       → call Gemini, upload to users/<uid>/<key>, sign URL
+```
 
-## Run Locally
+GCS bucket is private. Browsers receive 1-hour V4 signed URLs and load assets directly from GCS. The Gemini key lives in Secret Manager and is mounted by Cloud Run as `$GEMINI_API_KEY`. See `docs/ARCHITECTURE.md` for the full request-flow walkthrough.
 
-**Prerequisites:**  Node.js
+## Local development
 
+Prerequisites: Node 22+, a Firebase project (Auth + Firestore enabled), a Gemini API key.
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+```bash
+git clone <repo>
+cd ovg-casino-ui
+cp .env.example .env   # then fill in the VITE_FIREBASE_* and GEMINI_API_KEY values
+npm install
+npm run dev:server    # terminal 1 — Express on :8080
+npm run dev           # terminal 2 — Vite on :3000, proxies /api to :8080
+```
+
+Open <http://localhost:3000>. Vite's dev server proxies `/api/*` to the Express server.
+
+## Tests
+
+```bash
+npm test
+```
+
+Vitest runs server (node env) and client (jsdom env) projects in parallel. Both must pass before deploy. The `deploy.sh deploy` command runs `npm test` as a pre-build gate.
+
+## Deployment
+
+One-time setup (per GCP project):
+
+```bash
+cp deploy/.env.deploy.example deploy/.env.deploy
+# fill in GCP_PROJECT_ID, GCS_BUCKET, all VITE_FIREBASE_* values, optionally CES vars
+./deploy/deploy.sh setup     # enables APIs, creates bucket, secret, IAM, Firestore rules
+```
+
+Subsequent deploys:
+
+```bash
+./deploy/deploy.sh deploy    # runs tests, builds in Cloud Build, deploys to Cloud Run
+```
+
+Other commands:
+
+- `./deploy/deploy.sh rotate-key` — rotate the Gemini API key in Secret Manager.
+- `./deploy/deploy.sh logs` — tail Cloud Run logs.
+
+## Configuration
+
+All env vars documented in `.env.example` (local + server) and `deploy/.env.deploy.example` (deploy automation).
+
+## Project layout
+
+- `src/` — React client (Vite-built)
+- `server/` — Express server (TypeScript-built to `dist-server/`)
+- `deploy/` — Cloud Build + deploy script
+- `docs/` — architecture, security, brainstormed designs and plans
+- `firestore.rules` — Firestore security rules
+
+See `docs/ARCHITECTURE.md` and `docs/SECURITY.md` for design and threat-model notes.
