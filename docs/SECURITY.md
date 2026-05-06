@@ -16,7 +16,10 @@ Short threat-model summary. Not a comprehensive audit.
 ## Rate limiting
 
 - **`/api/*` GETs**: per-uid 30 req/min via `express-rate-limit` (configurable via `RATE_LIMIT_RPM`). Returns 429.
-- **`/api/*/regenerate` POSTs**: per-uid daily counter (Firestore `regen_quota/<uid>`), default 200/day (configurable via `REGEN_RATE_LIMIT_PER_DAY`). Bounds the Gemini cost a single user can drive.
+  - **Caveat — per-instance, in-memory.** `express-rate-limit` v7 stores counters in process memory. With *N* Cloud Run instances, the effective per-uid rate is `N × RATE_LIMIT_RPM`. Cloud Run session affinity pins one user to one instance for short bursts, so this is mostly bounded in practice, but a long-running attack across instance boundaries can exceed the nominal limit. If this matters, swap in a `rate-limit-redis`/Memorystore store.
+- **`/api/*/regenerate` POSTs**: per-uid daily counter (Firestore `regen_quota/<uid>`), default 200/day (configurable via `REGEN_RATE_LIMIT_PER_DAY`). Bounds the Gemini cost a single user can drive. Firestore-backed, so the limit is **global across all instances** — no `N×` multiplier.
+  - 429 responses include a `Retry-After: <seconds-until-UTC-midnight>` header so clients can render an accurate "try again at midnight UTC" countdown.
+- **Auth failures** (missing/expired/forged ID token): logged server-side with the Firebase error code (e.g. `auth/id-token-expired`), 401-returned to client without leaking which failure mode it was. Lets oncall distinguish "expired token wave" (transient) from "wrong project" (misconfiguration) without exposing it to attackers.
 
 ## SSRF / prompt injection
 
