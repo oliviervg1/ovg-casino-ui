@@ -1,12 +1,19 @@
 import { useTheme } from '../../hooks/useTheme';
 import { useMotion } from '../../hooks/useMotion';
-import type { SkeletonVariant } from '../../utils/themeManifesto';
+import { themeManifesto, type SkeletonVariant, type ThemeType } from '../../utils/themeManifesto';
 
 interface ThemedSkeletonProps {
   /** CSS aspect-ratio string (e.g. '3/4', '16/9'). */
   aspectRatio?: string;
   /** Optional fixed width — falls back to 100% of parent. */
   width?: string;
+  /**
+   * Override the document-level theme. When provided, the skeleton uses this
+   * theme's manifesto instead of reading <html data-theme>. Useful when many
+   * skeletons render on a single page under different themes (e.g. the lobby
+   * grid). When omitted, uses useTheme().
+   */
+  theme?: ThemeType;
   className?: string;
   'data-testid'?: string;
 }
@@ -26,8 +33,12 @@ const VARIANT_STYLES: Record<SkeletonVariant, React.CSSProperties> = {
   'ink-bleed':      { background: 'linear-gradient(135deg, rgba(71,85,105,0.2) 0%, rgba(251,191,36,0.3) 50%, rgba(71,85,105,0.2) 100%)', borderRadius: '4px' },
 };
 
-export function ThemedSkeleton({ aspectRatio, width = '100%', className, 'data-testid': testId }: ThemedSkeletonProps) {
-  const theme = useTheme();
+export function ThemedSkeleton({ aspectRatio, width = '100%', theme: themeOverride, className, 'data-testid': testId }: ThemedSkeletonProps) {
+  // Read the document-level theme (always — keeps the hook called unconditionally
+  // per rules of hooks). If an override is provided, use the manifesto entry for
+  // that theme instead.
+  const docTheme = useTheme();
+  const theme = themeOverride ? themeManifesto[themeOverride] : docTheme;
   const motion = useMotion();
   const baseStyle = VARIANT_STYLES[theme.skeleton];
   const animationStyle: React.CSSProperties = motion.shouldAnimate

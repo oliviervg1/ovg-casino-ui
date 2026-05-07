@@ -25,4 +25,12 @@ describe('ThemedSkeleton', () => {
     render(<ThemedSkeleton aspectRatio="3/4" data-testid="sk" />);
     expect(screen.getByTestId('sk').getAttribute('data-skeleton-variant')).toBe('unwrap');
   });
+
+  it('uses the theme prop override instead of the document theme when provided', () => {
+    document.documentElement.setAttribute('data-theme', 'sweets');
+    render(<ThemedSkeleton theme="ninja" data-testid="sk" />);
+    // Document is sweets (skeleton variant 'unwrap') but the prop says ninja
+    // (variant 'ink-bleed'); the prop wins.
+    expect(screen.getByTestId('sk').getAttribute('data-skeleton-variant')).toBe('ink-bleed');
+  });
 });
