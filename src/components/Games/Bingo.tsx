@@ -8,7 +8,7 @@ import { ThemeType } from '../../App';
 
 interface Props {
   name: string;
-  theme: string;
+  theme: ThemeType;
   balance: number;
   onUpdateBalance: (delta: number) => void;
   onBack: () => void;
@@ -52,7 +52,7 @@ export function Bingo({ name, theme, balance, onUpdateBalance, onBack }: Props) 
       do { n = Math.floor(Math.random() * 30) + 1; } while (localDrawn.includes(n));
       localDrawn.push(n);
       setDrawn([...localDrawn]);
-      soundEngine.playBingoDraw(theme as ThemeType);
+      soundEngine.playBingoDraw(theme);
       if (drawCount >= 12 || evaluateBingoBoard(currentBoard, localDrawn)) {
         clearInterval(interval);
         const won = evaluateBingoBoard(currentBoard, localDrawn);
@@ -61,10 +61,10 @@ export function Bingo({ name, theme, balance, onUpdateBalance, onBack }: Props) 
           onUpdateBalance(payout);
           setWin('small');
           setMessage(`Bingo! +${payout}`);
-          soundEngine.playWin(theme as ThemeType);
+          soundEngine.playWin(theme);
         } else {
           setMessage('No bingo this round.');
-          soundEngine.playLose(theme as ThemeType);
+          soundEngine.playLose(theme);
         }
         setDrawing(false);
       }

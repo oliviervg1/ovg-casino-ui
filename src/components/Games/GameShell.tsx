@@ -12,7 +12,7 @@ import type { ThemeType } from '../../utils/themeManifesto';
 
 export interface GameShellProps {
   name: string;
-  theme: string;
+  theme: ThemeType;
   bgKey: string;
   extraAssetKeys: string[];
   gameType: 'roulette' | 'slots' | 'bingo';
@@ -24,6 +24,8 @@ export interface GameShellProps {
   playDisabled: boolean;
   message: string | null;
   balance: number;
+  /** @deprecated GameShell no longer renders a back button (now in AppHeader).
+   *  Kept in props so existing call sites in Slots/Roulette/Bingo don't need updates. */
   onBack: () => void;
   children: ReactNode;
 }
@@ -36,7 +38,7 @@ export function GameShell(props: GameShellProps) {
 
   // Register what's playing for the header MusicPill while this shell is mounted.
   useEffect(() => {
-    setNowPlaying({ theme: props.theme as ThemeType, gameType: props.gameType as NowPlayingGameType });
+    setNowPlaying({ theme: props.theme, gameType: props.gameType as NowPlayingGameType });
     return () => setNowPlaying(null);
   }, [props.theme, props.gameType, setNowPlaying]);
 
@@ -45,12 +47,15 @@ export function GameShell(props: GameShellProps) {
       audioRef.current.src = musicUrl;
       audioRef.current.loop = true;
       audioRef.current.volume = 0.4;
-      audioRef.current.muted = muted;
       audioRef.current.play()?.catch(() => { /* user-gesture required */ });
     }
-  }, [musicUrl, muted]);
+    // `muted` is intentionally NOT in deps — the dedicated mute effect below owns it
+    // so toggling mute does not re-assign src and restart playback.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [musicUrl]);
 
-  // Apply mute changes immediately to a playing audio element.
+  // Apply mute changes immediately to a playing audio element. Runs on mount too,
+  // so initial-mount mute state is established here, not in the load effect.
   useEffect(() => {
     if (audioRef.current) audioRef.current.muted = muted;
   }, [muted]);

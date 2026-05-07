@@ -8,7 +8,7 @@ import { ThemeType } from '../../App';
 
 interface Props {
   name: string;
-  theme: string;
+  theme: ThemeType;
   balance: number;
   onUpdateBalance: (delta: number) => void;
   onBack: () => void;
@@ -35,7 +35,7 @@ export function Roulette({ name, theme, balance, onUpdateBalance, onBack }: Prop
     setWin(null);
     setMessage(null);
     onUpdateBalance(-bet);
-    soundEngine.playRouletteSpin(theme as ThemeType, 2500);
+    soundEngine.playRouletteSpin(theme, 2500);
 
     const num = Math.floor(Math.random() * 37);
     const colour: RouletteColour = num === 0 ? 'green' : (num % 2 === 1 ? 'red' : 'black');
@@ -50,10 +50,10 @@ export function Roulette({ name, theme, balance, onUpdateBalance, onBack }: Prop
         const tier: 'jackpot' | 'small' = payout >= bet * 10 ? 'jackpot' : 'small';
         setWin(tier);
         setMessage(`Won ${payout}!`);
-        soundEngine.playWin(theme as ThemeType);
+        soundEngine.playWin(theme);
       } else {
         setMessage(`Landed on ${num} (${colour}). Better luck next time.`);
-        soundEngine.playLose(theme as ThemeType);
+        soundEngine.playLose(theme);
       }
       setSpinning(false);
     }, 2500);

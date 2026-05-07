@@ -9,7 +9,7 @@ import { ThemeType } from '../../App';
 
 interface Props {
   name: string;
-  theme: string;
+  theme: ThemeType;
   balance: number;
   onUpdateBalance: (delta: number) => void;
   onBack: () => void;
@@ -58,7 +58,7 @@ export function Slots({ name, theme, balance, onUpdateBalance, onBack }: Props) 
     setWin(null);
     setMessage(null);
     onUpdateBalance(-bet);
-    soundEngine.playSlotSpin(theme as ThemeType, 2000);
+    soundEngine.playSlotSpin(theme, 2000);
 
     let spins = 0;
     const interval = setInterval(() => {
@@ -84,16 +84,16 @@ export function Slots({ name, theme, balance, onUpdateBalance, onBack }: Props) 
           onUpdateBalance(payout);
           setWin('jackpot');
           setMessage(`JACKPOT! +${payout}`);
-          soundEngine.playWin(theme as ThemeType);
+          soundEngine.playWin(theme);
         } else if (result === 'small') {
           const payout = bet * 3;
           onUpdateBalance(payout);
           setWin('small');
           setMessage(`Small win: +${payout}`);
-          soundEngine.playWin(theme as ThemeType);
+          soundEngine.playWin(theme);
         } else {
           setMessage('No match. Try again.');
-          soundEngine.playLose(theme as ThemeType);
+          soundEngine.playLose(theme);
         }
 
         setSpinning(false);
