@@ -1,10 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
+import type { ComponentProps } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 
 vi.mock('../../hooks/useAssets', () => ({ useAssets: () => ({ assets: { bg_test: 'https://x/bg' }, loading: false }) }));
 vi.mock('../../hooks/useMusic', () => ({ useMusic: () => ({ musicUrl: 'https://x/m', loading: false }) }));
 
 import { GameShell } from './GameShell';
+import { AudioControlsProvider } from '../../contexts/AudioControlsContext';
 
 describe('GameShell', () => {
   const baseProps = {
@@ -24,20 +26,43 @@ describe('GameShell', () => {
     onBack: vi.fn(),
   };
 
+  const renderShell = (overrides: Partial<ComponentProps<typeof GameShell>> = {}) => {
+    document.documentElement.setAttribute('data-theme', 'sweets');
+    return render(
+      <AudioControlsProvider>
+        <GameShell {...baseProps} {...overrides}>
+          <div data-testid="game-body" />
+        </GameShell>
+      </AudioControlsProvider>
+    );
+  };
+
   it('renders children', () => {
-    render(<GameShell {...baseProps}><div data-testid="surface">wheel</div></GameShell>);
+    render(
+      <AudioControlsProvider>
+        <GameShell {...baseProps}><div data-testid="surface">wheel</div></GameShell>
+      </AudioControlsProvider>
+    );
     expect(screen.getByTestId('surface')).toBeTruthy();
   });
 
   it('calls onPlay when the play button is clicked', () => {
     const onPlay = vi.fn();
-    render(<GameShell {...baseProps} onPlay={onPlay}><div /></GameShell>);
+    render(
+      <AudioControlsProvider>
+        <GameShell {...baseProps} onPlay={onPlay}><div /></GameShell>
+      </AudioControlsProvider>
+    );
     fireEvent.click(screen.getByText('SPIN'));
     expect(onPlay).toHaveBeenCalledOnce();
   });
 
   it('disables the play button when playDisabled is true', () => {
-    render(<GameShell {...baseProps} playDisabled><div /></GameShell>);
+    render(
+      <AudioControlsProvider>
+        <GameShell {...baseProps} playDisabled><div /></GameShell>
+      </AudioControlsProvider>
+    );
     const btn = screen.getByText('SPIN').closest('button')!;
     expect(btn.disabled).toBe(true);
   });
@@ -46,7 +71,30 @@ describe('GameShell', () => {
     vi.doMock('../../hooks/useAssets', () => ({ useAssets: () => ({ assets: {}, loading: true }) }));
     vi.resetModules();
     const { GameShell: Shell2 } = await import('./GameShell');
-    render(<Shell2 {...baseProps}><div /></Shell2>);
-    expect(screen.getByText(/generating/i)).toBeTruthy();
+    const { AudioControlsProvider: Provider2 } = await import('../../contexts/AudioControlsContext');
+    render(
+      <Provider2>
+        <Shell2 {...baseProps}><div /></Shell2>
+      </Provider2>
+    );
+    expect(screen.getByText(/generating unique/i)).toBeTruthy();
+  });
+
+  it('renders a <BetControl> instead of a bare number input', () => {
+    renderShell();
+    expect(screen.getByTestId('bet-control')).toBeTruthy();
+    expect(document.querySelector('input[type="number"]')).toBeNull();
+  });
+
+  it('renders the play button as a ThemedButton (carries data-button-variant)', () => {
+    renderShell();
+    const btn = screen.getByRole('button', { name: 'SPIN' });
+    expect(btn.getAttribute('data-button-variant')).toBeTruthy();
+    expect(btn.getAttribute('data-size')).toBe('hero');
+  });
+
+  it('does not render the legacy back-to-lobby button (lives in AppHeader now)', () => {
+    renderShell();
+    expect(screen.queryByRole('button', { name: /back to lobby/i })).toBeNull();
   });
 });
