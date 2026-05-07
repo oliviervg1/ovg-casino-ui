@@ -67,14 +67,15 @@ function AppContent() {
     checkKey();
   }, []);
 
-  const userTheme = resolveGlobalTheme(profile?.theme);
-  let currentTheme = userTheme;
+  // The body theme tracks the current game's theme on game pages, so the
+  // per-theme CSS custom properties (sweets / egypt / space / …) apply.
+  // On non-game routes (lobby, profile, etc.) we fall back to a neutral
+  // default so the page chrome still has theme tokens to read.
+  let currentTheme: ThemeType = 'sweets';
   if (location.pathname.startsWith('/game/')) {
     const gameId = location.pathname.split('/game/')[1];
     const gameDef = getGameById(gameId);
-    if (gameDef) {
-      currentTheme = lightThemes.includes(gameDef.theme) ? 'light' : 'dark';
-    }
+    if (gameDef) currentTheme = gameDef.theme;
   }
   
   const bgKey = 'bg_main';
