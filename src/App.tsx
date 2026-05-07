@@ -19,8 +19,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useAssets } from './hooks/useAssets';
 import { User as UserIcon, HelpCircle, BookOpen } from 'lucide-react';
 import { getGameById } from './config/games';
+import type { ThemeType } from './utils/themeManifesto';
 
-export type ThemeType = 'sweets' | 'egypt' | 'space' | 'west' | 'ocean' | 'jungle' | 'vampire' | 'ninja';
+export type { ThemeType } from './utils/themeManifesto';
 export type GameType = string;
 
 function GameRouteWrapper() {
