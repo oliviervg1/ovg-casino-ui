@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, User as UserIcon, LogOut, Wallet, Palette, RefreshCw } from 'lucide-react';
 import { UserProfile } from '../hooks/useUser';
-import { regenerateAsset } from '../lib/AssetManager';
-import { regenerateMusic } from '../lib/MusicManager';
-import { RegenQuotaExceededError, RateLimitError } from '../lib/errors';
+import { useBatchRegenerate } from '../hooks/useBatchRegenerate';
 
 interface ProfileProps {
   profile: UserProfile;
@@ -13,86 +11,8 @@ interface ProfileProps {
   onUpdateTheme: (theme: 'light' | 'dark') => void;
 }
 
-// Cap concurrent regen requests so we don't trip the per-minute rate limit.
-// At RATE_LIMIT_RPM=30 a concurrency of 4 keeps inflight ≤ 4 with steady
-// drain; the full 105-task batch finishes in ~3.5 minutes without any 429s
-// and without saturating the Firestore quota counter with contention.
-const REGEN_CONCURRENCY = 4;
-
-async function runWithConcurrency<T>(
-  tasks: Array<() => Promise<T>>,
-  limit: number,
-): Promise<PromiseSettledResult<T>[]> {
-  const results: PromiseSettledResult<T>[] = new Array(tasks.length);
-  let next = 0;
-  async function worker() {
-    while (true) {
-      const i = next++;
-      if (i >= tasks.length) return;
-      try {
-        results[i] = { status: 'fulfilled', value: await tasks[i]() };
-      } catch (reason) {
-        results[i] = { status: 'rejected', reason };
-      }
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, () => worker()));
-  return results;
-}
-
 export function Profile({ profile, onBack, onLogout, onUpdateTheme }: ProfileProps) {
-  const [isRegenerating, setIsRegenerating] = useState(false);
-  const [regenStatus, setRegenStatus] = useState<string | null>(null);
-
-  const ASSET_KEYS = [
-    'sweets', 'egypt', 'space', 'west', 'ocean', 'jungle', 'vampire', 'ninja',
-  ].flatMap(theme => [
-    `roulette_${theme}`, `slots_${theme}`, `bingo_${theme}`,
-    `${theme}_1`, `${theme}_2`, `${theme}_3`, `${theme}_4`,
-    `bg_roulette_${theme}`, `bg_slots_${theme}`, `bg_bingo_${theme}`,
-  ]).concat(['bg_main']);
-
-  const MUSIC_PAIRS: Array<[string, string]> = [
-    'sweets', 'egypt', 'space', 'west', 'ocean', 'jungle', 'vampire', 'ninja',
-  ].flatMap(theme => (['roulette', 'slots', 'bingo'] as const).map(gt => [theme, gt] as [string, string]));
-
-  const handleRegenerateAssets = async () => {
-    setIsRegenerating(true);
-    setRegenStatus(null);
-    let done = 0;
-    const total = ASSET_KEYS.length + MUSIC_PAIRS.length;
-    let quotaHit = false;
-    let rateLimitHit = false;
-    const update = () => setRegenStatus(`Regenerating ${++done}/${total}…`);
-
-    const tasks: Array<() => Promise<unknown>> = [
-      ...ASSET_KEYS.map(k => () => regenerateAsset(k).then(update)),
-      ...MUSIC_PAIRS.map(([t, gt]) => () => regenerateMusic(t, gt).then(update)),
-    ];
-
-    const results = await runWithConcurrency(
-      tasks.map(fn => async () => {
-        try { return await fn(); } catch (err) {
-          if (err instanceof RegenQuotaExceededError) quotaHit = true;
-          else if (err instanceof RateLimitError) rateLimitHit = true;
-          throw err;
-        }
-      }),
-      REGEN_CONCURRENCY,
-    );
-
-    const failures = results.filter(r => r.status === 'rejected').length;
-    if (quotaHit) {
-      setRegenStatus("You've hit today's regenerate limit — try again tomorrow.");
-    } else if (rateLimitHit) {
-      setRegenStatus(`Server is rate-limiting requests. ${total - failures}/${total} regenerated; please try again in a minute.`);
-    } else if (failures > 0) {
-      setRegenStatus(`Regenerated ${total - failures}/${total}. ${failures} failed.`);
-    } else {
-      setRegenStatus(`All ${total} assets regenerated. Reload the page to see them.`);
-    }
-    setIsRegenerating(false);
-  };
+  const { start: handleRegenerateAssets, isRegenerating, status: regenStatus, error: regenError } = useBatchRegenerate();
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -157,6 +77,15 @@ export function Profile({ profile, onBack, onLogout, onUpdateTheme }: ProfilePro
               {isRegenerating ? (regenStatus ?? 'REGENERATING…') : 'REGENERATE ASSETS'}
             </button>
             {!isRegenerating && regenStatus && <p className="text-sm opacity-80">{regenStatus}</p>}
+            {regenError === 'quota' && (
+              <p className="text-sm text-red-400">Daily regenerate quota exceeded — try again tomorrow.</p>
+            )}
+            {regenError === 'rate-limit' && (
+              <p className="text-sm text-yellow-400">Rate limit hit — wait a minute and retry.</p>
+            )}
+            {regenError === 'partial' && (
+              <p className="text-sm text-yellow-400">Some assets failed to regenerate — try the unaffected ones again.</p>
+            )}
           </div>
 
           <button
