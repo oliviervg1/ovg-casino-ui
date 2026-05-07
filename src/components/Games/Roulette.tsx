@@ -70,7 +70,7 @@ export function Roulette({ name, theme, balance, onUpdateBalance, onBack }: Prop
       bet={bet}
       onBet={setBet}
       onPlay={handleSpin}
-      playLabel={spinning ? 'SPINNING...' : 'SPIN THE WHEEL'}
+      playLabel={spinning ? 'SPINNING...' : !betType ? 'Pick Red / Black / Even / Odd' : 'SPIN THE WHEEL'}
       playDisabled={spinning || !betType}
       message={message}
       balance={balance}
