@@ -18,8 +18,9 @@ import { Bingo } from './components/Games/Bingo';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAssets } from './hooks/useAssets';
 import { User as UserIcon, HelpCircle, BookOpen } from 'lucide-react';
-import { getGameById } from './config/games';
-import type { ThemeType } from './utils/themeManifesto';
+import { getGameById, GAME_REGISTRY } from './config/games';
+import { THEME_NAMES, type ThemeType } from './utils/themeManifesto';
+import { WorldPage } from './components/WorldPage';
 
 export type { ThemeType } from './utils/themeManifesto';
 export type GameType = string;
@@ -72,10 +73,13 @@ function AppContent() {
   // On non-game routes (lobby, profile, etc.) we fall back to a neutral
   // default so the page chrome still has theme tokens to read.
   let currentTheme: ThemeType = 'sweets';
-  if (location.pathname.startsWith('/game/')) {
-    const gameId = location.pathname.split('/game/')[1];
-    const gameDef = getGameById(gameId);
+  const gameMatch = location.pathname.match(/^\/game\/(.+)$/);
+  const worldMatch = location.pathname.match(/^\/world\/(.+)$/);
+  if (gameMatch) {
+    const gameDef = GAME_REGISTRY.find(g => g.id === gameMatch[1]);
     if (gameDef) currentTheme = gameDef.theme;
+  } else if (worldMatch && (THEME_NAMES as string[]).includes(worldMatch[1])) {
+    currentTheme = worldMatch[1] as ThemeType;
   }
   
   const bgKey = 'bg_main';
@@ -240,6 +244,11 @@ function AppContent() {
             <Route path="/rules/:gameId?" element={
               <motion.div className="flex-1 flex flex-col" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
                 <Rules onBack={() => navigate('/')} />
+              </motion.div>
+            } />
+            <Route path="/world/:theme" element={
+              <motion.div className="flex-1 flex flex-col" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
+                <WorldPage />
               </motion.div>
             } />
             <Route path="/game/:gameId" element={
