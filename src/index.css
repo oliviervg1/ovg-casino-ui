@@ -148,3 +148,21 @@
     transition: background-color 0.5s ease, color 0.5s ease;
   }
 }
+
+/* CES messenger: theme/route-aware position. The custom element lives at the
+   bottom-right by default; on game pages we move it bottom-left so it doesn't
+   overlap the primary action ThemedButton. */
+ces-messenger {
+  /* Use !important so we win against any inline style the element sets on itself
+     after upgrade. Visual-only — does not affect the element's behaviour. */
+  position: fixed !important;
+  right: 1.25rem !important;
+  bottom: 1.25rem !important;
+  left: auto !important;
+  z-index: 60;
+  transition: right 250ms ease, left 250ms ease;
+}
+:root[data-route="game"] ces-messenger {
+  right: auto !important;
+  left: 1.25rem !important;
+}
