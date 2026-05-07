@@ -17,10 +17,11 @@ import { Slots } from './components/Games/Slots';
 import { Bingo } from './components/Games/Bingo';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAssets } from './hooks/useAssets';
-import { User as UserIcon, HelpCircle, BookOpen } from 'lucide-react';
 import { getGameById, GAME_REGISTRY } from './config/games';
 import { THEME_NAMES, type ThemeType } from './utils/themeManifesto';
 import { WorldPage } from './components/WorldPage';
+import { AppHeader } from './components/Layout/AppHeader';
+import { AudioControlsProvider } from './contexts/AudioControlsContext';
 
 export type { ThemeType } from './utils/themeManifesto';
 export type GameType = string;
@@ -93,6 +94,14 @@ function AppContent() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', currentTheme);
   }, [currentTheme]);
+
+  useEffect(() => {
+    let route: 'lobby' | 'world' | 'game' | 'other' = 'other';
+    if (location.pathname === '/') route = 'lobby';
+    else if (location.pathname.startsWith('/world/')) route = 'world';
+    else if (location.pathname.startsWith('/game/')) route = 'game';
+    document.documentElement.setAttribute('data-route', route);
+  }, [location.pathname]);
 
   // Sync user profile name with CES Messenger
   useEffect(() => {
@@ -171,8 +180,9 @@ function AppContent() {
   }
 
   return (
-    <div className="h-screen flex flex-col transition-colors duration-500 overflow-hidden">
-      {bgLoading && (
+    <AudioControlsProvider>
+      <div className="h-screen flex flex-col transition-colors duration-500 overflow-hidden">
+        {bgLoading && (
         <div className="fixed inset-0 z-0 flex items-center justify-center bg-black/50 backdrop-blur-sm pointer-events-none transition-opacity duration-500">
           <div className="flex flex-col items-center">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white mb-4"></div>
@@ -180,48 +190,7 @@ function AppContent() {
           </div>
         </div>
       )}
-      <header className="p-4 flex justify-between items-center bg-black/20 backdrop-blur-md sticky top-0 z-50">
-        <div className="flex items-center gap-4">
-          <h1 
-            className="text-2xl font-casino tracking-wider cursor-pointer" 
-            onClick={() => navigate('/')}
-          >
-            OVG Casino
-          </h1>
-          <div className="px-4 py-1 rounded-full bg-black/30 font-mono font-bold text-lg text-green-400">
-            ${profile.balance.toLocaleString()}
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => navigate('/rules')} 
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-            title="Game Rules"
-          >
-            <BookOpen className="w-5 h-5 opacity-70" />
-            <span className="text-sm font-medium opacity-90 hidden sm:block">Rules</span>
-          </button>
-          <button 
-            onClick={() => navigate('/faq')} 
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-            title="Help & FAQ"
-          >
-            <HelpCircle className="w-5 h-5 opacity-70" />
-            <span className="text-sm font-medium opacity-90 hidden sm:block">Help</span>
-          </button>
-          <button 
-            onClick={() => navigate('/profile')} 
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-          >
-            {profile.photoURL ? (
-              <img src={profile.photoURL} alt={profile.displayName} className="w-6 h-6 rounded-full" referrerPolicy="no-referrer" />
-            ) : (
-              <UserIcon className="w-5 h-5 opacity-70" />
-            )}
-            <span className="text-sm font-medium opacity-90 hidden sm:block">{profile.displayName}</span>
-          </button>
-        </div>
-      </header>
+      <AppHeader profile={profile} onLogout={logout} />
 
       <main className="w-full mx-auto p-4 md:p-8 relative z-10 flex-1 flex flex-col overflow-y-auto">
         <AnimatePresence mode="wait">
@@ -258,8 +227,9 @@ function AppContent() {
             } />
           </Routes>
         </AnimatePresence>
-      </main>
-    </div>
+        </main>
+      </div>
+    </AudioControlsProvider>
   );
 }
 

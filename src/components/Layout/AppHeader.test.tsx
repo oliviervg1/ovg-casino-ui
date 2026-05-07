@@ -89,4 +89,9 @@ describe('AppHeader', () => {
     renderAt('/game/candy-crushers', true);
     expect(screen.getByTestId('music-pill')).toBeTruthy();
   });
+
+  it('renders exactly one <header> element', () => {
+    renderAt('/');
+    expect(document.querySelectorAll('header').length).toBe(1);
+  });
 });
