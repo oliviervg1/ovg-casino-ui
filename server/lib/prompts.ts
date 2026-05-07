@@ -132,6 +132,17 @@ export const MUSIC_PROMPTS: Record<string, string> = {
   ninja_roulette: "A fast-paced, traditional Japanese track with shamisen for a ninja roulette game.",
   ninja_slots: "An energetic, rhythmic track with taiko drums for a ninja slot machine game.",
   ninja_bingo: "A peaceful, ambient track with shakuhachi flute for a ninja bingo game.",
+  // World pages — ambient lobby/exploration tracks, distinct from the
+  // upbeat game tracks above. Auto-played when the operator opens
+  // /world/<theme> to browse the 3 games for that theme.
+  sweets_world: "A dreamy, ambient music-box melody for browsing a candy-themed casino lobby. Soft chimes, gentle bells, light pastel atmosphere, slow tempo.",
+  egypt_world: "A mystical, ambient track with sitar and oud for exploring an ancient Egyptian temple casino lobby. Slow, atmospheric, sand-swept, evocative of vast tomb chambers.",
+  space_world: "An ambient, ethereal synthwave track for floating through a sci-fi space casino lobby. Spacious pads, distant pulses, weightless atmosphere.",
+  west_world: "A gentle acoustic guitar ballad with harmonica for entering a wild west saloon casino lobby. Warm, dusty, evocative of late-afternoon plains.",
+  ocean_world: "A dreamy, ambient track with bubbles and distant whale song for exploring an underwater Atlantis casino lobby. Slow, vast, mysterious.",
+  jungle_world: "An ambient, atmospheric track with distant tribal drums and tropical bird calls for exploring a hidden jungle temple casino lobby. Slow tempo, mossy, humid.",
+  vampire_world: "A slow, gothic ambient track with cathedral organ and choir whispers for entering a vampire castle casino lobby. Eerie, regal, unsettling.",
+  ninja_world: "A peaceful, meditative track with shakuhachi flute and koto for browsing a feudal Japan dojo casino lobby. Zen, reflective, restrained.",
 };
 
 export type AssetKey = keyof typeof ASSET_PROMPTS;

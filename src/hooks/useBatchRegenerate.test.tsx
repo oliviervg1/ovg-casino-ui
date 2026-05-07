@@ -28,8 +28,8 @@ describe('useBatchRegenerate', () => {
 
     // 81 themed asset keys (8 themes × 10) + bg_main = 81 asset calls
     expect(regenerateAsset).toHaveBeenCalledTimes(81);
-    // 24 music pairs (8 themes × 3 game types)
-    expect(regenerateMusic).toHaveBeenCalledTimes(24);
+    // 32 music pairs (8 themes × 4 contexts: roulette/slots/bingo/world)
+    expect(regenerateMusic).toHaveBeenCalledTimes(32);
   });
 
   it('updates status as tasks complete', async () => {
@@ -43,8 +43,8 @@ describe('useBatchRegenerate', () => {
     await act(async () => { await result.current.start(); });
 
     await waitFor(() => {
-      // Final status mentions completion count = 81 + 24 = 105
-      expect(result.current.status).toMatch(/105\/105/);
+      // Final status mentions completion count = 81 + 32 = 113
+      expect(result.current.status).toMatch(/113\/113/);
     });
   });
 

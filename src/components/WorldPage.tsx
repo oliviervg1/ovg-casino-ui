@@ -37,9 +37,10 @@ export function WorldPage() {
   const { assets } = useAssets(assetKeys);
   const bgUrl = assets[`bg_slots_${theme}`];
 
-  // Auto-play themed music. Defaults to the slots track for this theme;
-  // useMusic exposes the URL via musicUrl.
-  const { musicUrl } = useMusic(theme, 'slots');
+  // Auto-play the themed Lyria 'world' track for this page — distinct
+  // from the per-game-type tracks (which are more upbeat); the world
+  // tracks are ambient/exploratory for browsing the 3 games.
+  const { musicUrl } = useMusic(theme, 'world');
   useEffect(() => {
     if (audioRef.current && musicUrl) {
       audioRef.current.src = musicUrl;

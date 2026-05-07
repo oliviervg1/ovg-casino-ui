@@ -13,7 +13,7 @@ const ASSET_KEYS = THEME_NAMES.flatMap(theme => [
 ]).concat(['bg_main']);
 
 const MUSIC_PAIRS: Array<[string, string]> = THEME_NAMES.flatMap(theme =>
-  (['roulette', 'slots', 'bingo'] as const).map(gt => [theme, gt] as [string, string])
+  (['roulette', 'slots', 'bingo', 'world'] as const).map(gt => [theme, gt] as [string, string])
 );
 
 async function runWithConcurrency<T>(
