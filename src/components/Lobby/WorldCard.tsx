@@ -1,4 +1,5 @@
 import { themeManifesto, type ThemeType } from '../../utils/themeManifesto';
+import { GAME_REGISTRY } from '../../config/games';
 
 type GameType = 'roulette' | 'slots' | 'bingo';
 
@@ -11,19 +12,22 @@ const GAME_ICONS: Record<GameType, string> = {
 interface WorldCardProps {
   theme: ThemeType;
   bgImageUrl: string;
-  /** Receives the gameId in the form `<gameType>-<theme>` (e.g. 'slots-sweets'). */
+  /** Card body click — navigates to the theme-world page. */
+  onSelectWorld: (theme: ThemeType) => void;
+  /** Icon click — receives the real GAME_REGISTRY id (e.g. 'candy-crushers'). */
   onSelectGame: (gameId: string) => void;
   'data-testid'?: string;
 }
 
-export function WorldCard({ theme, bgImageUrl, onSelectGame, 'data-testid': testId }: WorldCardProps) {
+export function WorldCard({ theme, bgImageUrl, onSelectWorld, onSelectGame, 'data-testid': testId }: WorldCardProps) {
   const m = themeManifesto[theme];
   const gameTypes: GameType[] = ['roulette', 'slots', 'bingo'];
 
-  const handleCardClick = () => onSelectGame(`slots-${theme}`);
+  const handleCardClick = () => onSelectWorld(theme);
   const handleIconClick = (gt: GameType) => (e: React.MouseEvent) => {
     e.stopPropagation();
-    onSelectGame(`${gt}-${theme}`);
+    const game = GAME_REGISTRY.find(g => g.type === gt && g.theme === theme);
+    if (game) onSelectGame(game.id);
   };
 
   return (
@@ -42,14 +46,9 @@ export function WorldCard({ theme, bgImageUrl, onSelectGame, 'data-testid': test
         boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
       }}
     >
-      {/* Vignette overlay for legibility */}
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.6) 100%)' }} />
-
       <div className="relative z-10 flex justify-between items-end">
-        <span
-          className={`${m.font} text-white text-2xl`}
-          style={{ textShadow: '0 2px 6px rgba(0,0,0,0.8)' }}
-        >
+        <span className={`${m.font} text-white text-2xl`} style={{ textShadow: '0 2px 6px rgba(0,0,0,0.8)' }}>
           {m.displayName}
         </span>
         <div className="flex gap-1">

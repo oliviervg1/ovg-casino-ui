@@ -6,9 +6,10 @@ import { ThemedSkeleton } from '../Themed/ThemedSkeleton';
 
 interface LobbyGridProps {
   onSelectGame: (gameId: string) => void;
+  onSelectWorld: (theme: ThemeType) => void;
 }
 
-export function LobbyGrid({ onSelectGame }: LobbyGridProps) {
+export function LobbyGrid({ onSelectGame, onSelectWorld }: LobbyGridProps) {
   const assetKeys = useMemo(() => THEME_NAMES.map(t => `bg_slots_${t}`), []);
   const { assets, loading } = useAssets(assetKeys);
 
@@ -30,6 +31,7 @@ export function LobbyGrid({ onSelectGame }: LobbyGridProps) {
           theme={t}
           bgImageUrl={assets[`bg_slots_${t}`] ?? ''}
           onSelectGame={onSelectGame}
+          onSelectWorld={onSelectWorld}
         />
       ))}
     </div>

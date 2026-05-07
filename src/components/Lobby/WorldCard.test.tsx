@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { cleanup, render, screen, fireEvent } from '@testing-library/react';
 import { THEME_NAMES, type ThemeType, themeManifesto } from '../../utils/themeManifesto';
+import { GAME_REGISTRY } from '../../config/games';
 import { WorldCard } from './WorldCard';
+
+const noop = () => {};
 
 describe('WorldCard', () => {
   beforeEach(() => {
@@ -14,52 +17,54 @@ describe('WorldCard', () => {
 
   THEME_NAMES.forEach((theme: ThemeType) => {
     it(`renders for theme=${theme} with the manifesto display name`, () => {
-      const expectedName = themeManifesto[theme].displayName;
-      render(<WorldCard theme={theme} bgImageUrl="https://example/bg.png" onSelectGame={() => {}} />);
-      expect(screen.getByText(expectedName)).toBeTruthy();
+      render(<WorldCard theme={theme} bgImageUrl="https://example/bg.png" onSelectWorld={noop} onSelectGame={noop} />);
+      expect(screen.getByText(themeManifesto[theme].displayName)).toBeTruthy();
     });
   });
 
   it('renders the bg image as the card background', () => {
-    render(<WorldCard theme="sweets" bgImageUrl="https://example/bg.png" onSelectGame={() => {}} data-testid="wc" />);
+    render(<WorldCard theme="sweets" bgImageUrl="https://example/bg.png" onSelectWorld={noop} onSelectGame={noop} data-testid="wc" />);
     const card = screen.getByTestId('wc') as HTMLElement;
     expect(card.style.backgroundImage).toContain('https://example/bg.png');
   });
 
-  it('clicking the card body selects the slots game by default', () => {
+  it('clicking the card body calls onSelectWorld with the theme', () => {
     let selected: string | null = null;
-    render(<WorldCard theme="sweets" bgImageUrl="" onSelectGame={(g) => { selected = g; }} data-testid="wc" />);
+    render(<WorldCard theme="sweets" bgImageUrl="" onSelectWorld={(t) => { selected = t; }} onSelectGame={noop} data-testid="wc" />);
     fireEvent.click(screen.getByTestId('wc'));
-    expect(selected).toBe('slots-sweets');
+    expect(selected).toBe('sweets');
   });
 
-  it('clicking the roulette icon selects the roulette game', () => {
+  it('clicking the roulette icon resolves the real game ID for that theme', () => {
     let selected: string | null = null;
-    render(<WorldCard theme="sweets" bgImageUrl="" onSelectGame={(g) => { selected = g; }} />);
+    render(<WorldCard theme="sweets" bgImageUrl="" onSelectWorld={noop} onSelectGame={(g) => { selected = g; }} />);
     fireEvent.click(screen.getByLabelText(/roulette/i));
-    expect(selected).toBe('roulette-sweets');
+    const expected = GAME_REGISTRY.find(g => g.type === 'roulette' && g.theme === 'sweets')!.id;
+    expect(selected).toBe(expected);
   });
 
-  it('clicking the bingo icon selects the bingo game', () => {
+  it('clicking the slots icon resolves the real game ID for that theme', () => {
     let selected: string | null = null;
-    render(<WorldCard theme="sweets" bgImageUrl="" onSelectGame={(g) => { selected = g; }} />);
+    render(<WorldCard theme="ninja" bgImageUrl="" onSelectWorld={noop} onSelectGame={(g) => { selected = g; }} />);
+    fireEvent.click(screen.getByLabelText(/slots/i));
+    const expected = GAME_REGISTRY.find(g => g.type === 'slots' && g.theme === 'ninja')!.id;
+    expect(selected).toBe(expected);
+  });
+
+  it('clicking the bingo icon resolves the real game ID for that theme', () => {
+    let selected: string | null = null;
+    render(<WorldCard theme="vampire" bgImageUrl="" onSelectWorld={noop} onSelectGame={(g) => { selected = g; }} />);
     fireEvent.click(screen.getByLabelText(/bingo/i));
-    expect(selected).toBe('bingo-sweets');
+    const expected = GAME_REGISTRY.find(g => g.type === 'bingo' && g.theme === 'vampire')!.id;
+    expect(selected).toBe(expected);
   });
 
   it('clicking a game icon does NOT bubble to the card body click', () => {
-    let cardClicks = 0;
-    let iconClicks = 0;
-    render(
-      <WorldCard
-        theme="sweets"
-        bgImageUrl=""
-        onSelectGame={(g) => { if (g.startsWith('slots')) cardClicks++; else iconClicks++; }}
-        data-testid="wc"
-      />
-    );
+    let worldSelected = 0;
+    let gameSelected = 0;
+    render(<WorldCard theme="sweets" bgImageUrl="" onSelectWorld={() => worldSelected++} onSelectGame={() => gameSelected++} data-testid="wc" />);
     fireEvent.click(screen.getByLabelText(/roulette/i));
-    expect(iconClicks).toBe(1);
-    expect(cardClicks).toBe(0);
+    expect(gameSelected).toBe(1);
+    expect(worldSelected).toBe(0);
   });
 });
