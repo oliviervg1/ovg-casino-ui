@@ -19,6 +19,34 @@
   --font-jungle: "Bangers", "Inter", cursive;
   --font-vampire: "Creepster", "Inter", cursive;
   --font-ninja: "Shojumaru", "Inter", cursive;
+
+  /* Typography scale (line-height inline where needed) */
+  --text-display: 2.75rem;     /* 44px — game titles, win labels */
+  --text-h1: 1.5rem;           /* 24px */
+  --text-h2: 1.125rem;         /* 18px */
+  --text-body: 0.875rem;       /* 14px */
+  --text-label: 0.6875rem;     /* 11px — uppercase labels */
+  --text-mono: 0.875rem;       /* 14px — currency */
+  --text-micro: 0.625rem;      /* 10px — captions */
+
+  /* Spacing scale — 4-unit grid */
+  --space-1: 0.25rem;          /* 4px */
+  --space-2: 0.5rem;           /* 8px */
+  --space-3: 0.75rem;          /* 12px */
+  --space-4: 1rem;             /* 16px */
+  --space-6: 1.5rem;           /* 24px */
+  --space-8: 2rem;             /* 32px */
+  --space-12: 3rem;            /* 48px */
+  --space-16: 4rem;            /* 64px */
+
+  /* Motion durations + easings */
+  --motion-instant: 100ms;
+  --motion-quick: 250ms;
+  --motion-standard: 400ms;
+  --motion-slow: 1200ms;
+  --motion-spin: 2500ms;
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-spin: cubic-bezier(0.15, 0, 0.25, 1);
 }
 
 @layer base {
