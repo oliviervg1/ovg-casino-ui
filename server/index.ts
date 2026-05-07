@@ -42,9 +42,15 @@ export function createApp(): Express {
         // Firebase popup login renders an iframe under firebaseapp.com.
         frameSrc: ["'self'", 'https://*.firebaseapp.com'],
         // CES Messenger when enabled — gstatic for the widget, jsdelivr for handlebars.
-        // Vite-injected styles need 'unsafe-inline' for tailwind utilities.
-        scriptSrc: ["'self'", 'https://www.gstatic.com', 'https://cdn.jsdelivr.net'],
-        styleSrc: ["'self'", "'unsafe-inline'"],
+        // Vite-injected styles need 'unsafe-inline' for tailwind utilities. Google Fonts
+        // ships the @font-face stylesheet from fonts.googleapis.com and the .woff2 files
+        // from fonts.gstatic.com — both are required for the themed display fonts.
+        // Firebase signInWithPopup dynamically injects https://apis.google.com/js/api.js
+        // (the gapi loader) before opening the OAuth popup; the popup window itself is
+        // not subject to our CSP and the hidden auth iframe is covered by frame-src.
+        scriptSrc: ["'self'", 'https://www.gstatic.com', 'https://cdn.jsdelivr.net', 'https://apis.google.com'],
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
         objectSrc: ["'none'"],
         baseUri: ["'self'"],
         frameAncestors: ["'none'"],

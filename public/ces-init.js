@@ -1,0 +1,113 @@
+window.addEventListener('ces-messenger-loaded', () => {
+  const cesMessenger = document.querySelector('ces-messenger');
+
+  const templateString = `
+  <style>
+    .game-carousel {
+      display: flex;
+      overflow-x: auto;
+      gap: 12px;
+      padding: 10px 4px 14px 4px;
+      scrollbar-width: thin;
+      scrollbar-color: #475569 transparent;
+    }
+    .game-carousel::-webkit-scrollbar {
+      height: 6px;
+    }
+    .game-carousel::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 4px;
+    }
+    .game-card {
+      min-width: 220px;
+      max-width: 240px;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 16px;
+      background: #0f172a;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+      flex-shrink: 0;
+    }
+    .game-card h3 {
+      margin: 0 0 8px 0;
+      font-size: 18px;
+      color: #f8fafc;
+      font-family: 'Righteous', sans-serif !important;
+      letter-spacing: 0.5px;
+    }
+    .game-card p {
+      font-size: 13.5px;
+      color: #cbd5e1;
+      margin: 0 0 18px 0;
+      flex-grow: 1;
+      font-family: 'Inter', sans-serif !important;
+      line-height: 1.5;
+    }
+    .game-card a.play-button {
+      display: block;
+      background-color: #8b5cf6;
+      background-image: linear-gradient(to right, #8b5cf6, #6d28d9);
+      color: #fff;
+      text-decoration: none;
+      text-align: center;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif !important;
+      transition: transform 0.2s, opacity 0.2s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .game-card a.play-button:hover {
+      transform: translateY(-1px);
+      opacity: 0.9;
+    }
+    .game-card a.play-button:active {
+      transform: translateY(1px);
+    }
+  </style>
+  <div class="game-carousel">
+    {{#each games}}
+    <div class="game-card">
+      <h3>{{title}}</h3>
+      <p>{{subtitle}}</p>
+      <a href="{{uri}}" target="_blank" class="play-button">Play Now</a>
+    </div>
+    {{/each}}
+  </div>`;
+
+  const compiledTemplate = Handlebars.compile(templateString);
+  cesMessenger.registerTemplate('game_carousel', compiledTemplate);
+});
+
+// Listen for the agent actively ending the session
+window.addEventListener('ces-end-session', (event) => {
+  const cesm = document.querySelector('ces-messenger');
+  console.log("Agent ended the session:", event.detail.endSession);
+  try {
+    cesm.endSession();
+    const p1 = cesm.disconnectWebStream('AGENT_REQUESTED');
+    if (p1 && p1.catch) p1.catch((e) => console.error(e));
+    const p2 = cesm.clearStorage();
+    if (p2 && p2.catch) p2.catch((e) => console.error(e));
+    cesm.close();
+  } catch (e) {
+    console.error("Error during session end:", e);
+  }
+});
+
+window.addEventListener('ces-chat-open-changed', (event) => {
+  const cesm = document.querySelector('ces-messenger');
+  if (!event.detail.isOpen) {
+    try {
+      cesm.endSession();
+      const p1 = cesm.disconnectWebStream('USER_REQUESTED');
+      if (p1 && p1.catch) p1.catch((e) => console.error(e));
+      const p2 = cesm.clearStorage();
+      if (p2 && p2.catch) p2.catch((e) => console.error(e));
+    } catch (e) {
+      console.error("Error during chat close:", e);
+    }
+  }
+});

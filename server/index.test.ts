@@ -52,7 +52,13 @@ describe('server bootstrap', () => {
     expect(csp).toMatch(/media-src[^;]*storage\.googleapis\.com/);
     expect(csp).toMatch(/connect-src[^;]*\*\.googleapis\.com/);
     expect(csp).toMatch(/script-src[^;]*www\.gstatic\.com/);
+    expect(csp).toMatch(/script-src[^;]*apis\.google\.com/);
+    expect(csp).toMatch(/style-src[^;]*fonts\.googleapis\.com/);
+    expect(csp).toMatch(/font-src[^;]*fonts\.gstatic\.com/);
     expect(csp).toMatch(/frame-ancestors\s+'none'/);
+    // Regression guard: previously-vestigial Unsplash placeholders were stripped
+    // from src/index.css; CSP must NOT silently re-allow that origin.
+    expect(csp).not.toMatch(/img-src[^;]*unsplash/);
   });
 
   it('sets Cross-Origin-Opener-Policy to allow Firebase popup login', async () => {

@@ -31,7 +31,10 @@
     --theme-secondary: #8b5cf6;
     --theme-accent: #ec4899;
     --theme-text: #ffffff;
-    --bg-image: url('https://images.unsplash.com/photo-1596838132731-3301c3fd4317?q=80&w=2070&auto=format&fit=crop');
+    /* Real background is bg_main (a Gemini-generated GCS asset) — App.tsx swaps
+       --bg-image to its signed URL once Firebase auth resolves. Default to none
+       so the body's background-image (gradient + var) stays valid pre-load. */
+    --bg-image: none;
   }
 
   :root[data-theme="light"] {
@@ -42,7 +45,7 @@
     --theme-secondary: #d946ef; /* fuchsia-500 */
     --theme-accent: #14b8a6; /* teal-500 */
     --theme-text: #4c1d95; /* violet-900 */
-    --bg-image: url('https://images.unsplash.com/photo-1574226516831-e1dff420e507?q=80&w=2070&auto=format&fit=crop');
+    --bg-image: none;
   }
 
   :root[data-theme="dark"] {
@@ -53,7 +56,7 @@
     --theme-secondary: #b45309; /* amber-700 */
     --theme-accent: #0ea5e9; /* sky-500 */
     --theme-text: #fef08a; /* yellow-200 */
-    --bg-image: url('https://images.unsplash.com/photo-1539667468225-eebb663053e6?q=80&w=2069&auto=format&fit=crop');
+    --bg-image: none;
   }
 
   body {
