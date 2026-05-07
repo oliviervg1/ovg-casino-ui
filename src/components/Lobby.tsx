@@ -10,7 +10,7 @@ interface LobbyProps {
 }
 
 export function Lobby({ onSelectGame }: LobbyProps) {
-  const { start: handleRegenerate, isRegenerating, status: regenStatus } = useBatchRegenerate();
+  const { start: handleRegenerate, isRegenerating, status: regenStatus, error: regenError } = useBatchRegenerate();
   const navigate = useNavigate();
 
   return (
@@ -19,6 +19,7 @@ export function Lobby({ onSelectGame }: LobbyProps) {
         onRegenerate={handleRegenerate}
         isRegenerating={isRegenerating}
         status={regenStatus}
+        error={regenError}
       />
       <LobbyGrid
         onSelectGame={(gameId) => onSelectGame(gameId as GameType)}
