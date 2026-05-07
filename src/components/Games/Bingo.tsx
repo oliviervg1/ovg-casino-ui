@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GameShell } from './GameShell';
 import { evaluateBingoBoard } from './gameLogic';
-import { getThemeStyles } from '../../utils/themeStyles';
+import { useTheme } from '../../hooks/useTheme';
 import { soundEngine } from '../../utils/SoundEngine';
 import { ThemeType } from '../../App';
 
@@ -28,7 +28,7 @@ export function Bingo({ name, theme, balance, onUpdateBalance, onBack }: Props) 
   const [message, setMessage] = useState<string | null>(null);
 
   const extraAssetKeys = [`bingo_${theme}`];
-  const themeStyles = getThemeStyles(theme);
+  const { font: themeFont } = useTheme();
 
   function handlePlay() {
     if (drawing || balance < bet) return;
@@ -104,7 +104,7 @@ export function Bingo({ name, theme, balance, onUpdateBalance, onBack }: Props) 
                     rotate: value === lastDrawn ? [0, -10, 10, 0] : 0,
                   }}
                   transition={{ duration: 0.3 }}
-                  className={`aspect-square flex items-center justify-center rounded-xl text-[3vh] md:text-[4vh] transition-all duration-300 overflow-hidden relative ${themeStyles.font} ${
+                  className={`aspect-square flex items-center justify-center rounded-xl text-[3vh] md:text-[4vh] transition-all duration-300 overflow-hidden relative ${themeFont} ${
                     marked
                       ? 'bg-theme-accent text-white shadow-[0_0_20px_rgba(0,0,0,0.4)] ring-[0.5vh] ring-white/50'
                       : 'bg-white text-gray-800 border-b-[0.5vh] border-gray-300'
@@ -133,7 +133,7 @@ export function Bingo({ name, theme, balance, onUpdateBalance, onBack }: Props) 
                 animate={{ scale: [1, 1.2, 1], opacity: 1, y: 0 }}
                 exit={{ scale: 0, opacity: 0, y: 20 }}
                 transition={{ scale: { duration: 0.5 } }}
-                className={`w-[10vh] h-[10vh] md:w-[12vh] md:h-[12vh] rounded-full flex items-center justify-center text-[5vh] md:text-[6vh] shadow-2xl border-[0.5vh] border-white mb-[2vh] bg-theme-primary text-white ${themeStyles.font}`}
+                className={`w-[10vh] h-[10vh] md:w-[12vh] md:h-[12vh] rounded-full flex items-center justify-center text-[5vh] md:text-[6vh] shadow-2xl border-[0.5vh] border-white mb-[2vh] bg-theme-primary text-white ${themeFont}`}
               >
                 {lastDrawn}
               </motion.div>
@@ -145,7 +145,7 @@ export function Bingo({ name, theme, balance, onUpdateBalance, onBack }: Props) 
               {drawn.map((n, idx) => (
                 <span
                   key={`${n}-${idx}`}
-                  className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm bg-theme-bg/60 border border-theme-primary text-white ${themeStyles.font}`}
+                  className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm bg-theme-bg/60 border border-theme-primary text-white ${themeFont}`}
                 >
                   {n}
                 </span>

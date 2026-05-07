@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { GameShell } from './GameShell';
 import { evaluateRouletteBet, type RouletteColour } from './gameLogic';
-import { getThemeStyles } from '../../utils/themeStyles';
+import { useTheme } from '../../hooks/useTheme';
 import { soundEngine } from '../../utils/SoundEngine';
 import { ThemeType } from '../../App';
 
@@ -27,7 +27,7 @@ export function Roulette({ name, theme, balance, onUpdateBalance, onBack }: Prop
   const [message, setMessage] = useState<string | null>(null);
 
   const extraAssetKeys = [`roulette_${theme}`];
-  const themeStyles = getThemeStyles(theme);
+  const { font: themeFont } = useTheme();
 
   function handleSpin() {
     if (!betType || spinning || balance < bet) return;
@@ -88,7 +88,7 @@ export function Roulette({ name, theme, balance, onUpdateBalance, onBack }: Prop
               rotate: { duration: 2.5, ease: [0.2, 0.8, 0.2, 1] },
               scale: { duration: 0.5, repeat: spinning ? Infinity : 0 },
             }}
-            className={`w-[30vh] h-[30vh] md:w-[40vh] md:h-[40vh] rounded-full border-[1vh] border-theme-primary flex items-center justify-center text-[8vh] md:text-[12vh] relative z-10 ${themeStyles.font} ${
+            className={`w-[30vh] h-[30vh] md:w-[40vh] md:h-[40vh] rounded-full border-[1vh] border-theme-primary flex items-center justify-center text-[8vh] md:text-[12vh] relative z-10 ${themeFont} ${
               resultColour === 'red'
                 ? 'bg-red-600 text-white'
                 : resultColour === 'black'
@@ -118,7 +118,7 @@ export function Roulette({ name, theme, balance, onUpdateBalance, onBack }: Prop
               key={type}
               onClick={() => setBetType(type)}
               disabled={spinning}
-              className={`py-[1.5vh] rounded-xl text-[2vh] md:text-[2.5vh] capitalize transition-all duration-300 shadow-lg ${themeStyles.font} ${
+              className={`py-[1.5vh] rounded-xl text-[2vh] md:text-[2.5vh] capitalize transition-all duration-300 shadow-lg ${themeFont} ${
                 betType === type
                   ? 'bg-theme-accent text-white ring-4 ring-theme-accent/50 scale-105 shadow-[0_0_20px_rgba(255,255,255,0.3)]'
                   : 'bg-theme-bg/80 opacity-80 hover:opacity-100 hover:scale-105 hover:bg-theme-bg'

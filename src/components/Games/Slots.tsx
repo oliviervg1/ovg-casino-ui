@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { GameShell } from './GameShell';
 import { evaluateSlotsResult } from './gameLogic';
 import { useAssets } from '../../hooks/useAssets';
-import { getThemeStyles } from '../../utils/themeStyles';
+import { useTheme } from '../../hooks/useTheme';
 import { soundEngine } from '../../utils/SoundEngine';
 import { ThemeType } from '../../App';
 
@@ -35,7 +35,7 @@ export function Slots({ name, theme, balance, onUpdateBalance, onBack }: Props) 
 
   const symbolKeys = [1, 2, 3, 4].map(n => `${theme}_${n}`);
   const extraAssetKeys = [`slots_${theme}`, ...symbolKeys];
-  const themeStyles = getThemeStyles(theme);
+  const { font: themeFont } = useTheme();
 
   // GameShell already preloads these via extraAssetKeys; this local call hits
   // the in-memory cache and gives us URL lookups for the reel rendering.
@@ -141,7 +141,7 @@ export function Slots({ name, theme, balance, onUpdateBalance, onBack }: Props) 
                   y: { repeat: spinning ? Infinity : 0, duration: 0.15, delay: index * 0.05 },
                   scale: { duration: 0.5, repeat: win !== null ? 3 : 0 },
                 }}
-                className={`w-[15vh] h-[20vh] md:w-[25vh] md:h-[35vh] bg-white rounded-xl flex items-center justify-center text-[8vh] md:text-[12vh] shadow-[0_5px_15px_rgba(0,0,0,0.3)] border-[0.5vh] border-gray-200 overflow-hidden relative ${themeStyles.font} ${
+                className={`w-[15vh] h-[20vh] md:w-[25vh] md:h-[35vh] bg-white rounded-xl flex items-center justify-center text-[8vh] md:text-[12vh] shadow-[0_5px_15px_rgba(0,0,0,0.3)] border-[0.5vh] border-gray-200 overflow-hidden relative ${themeFont} ${
                   win !== null && !spinning ? 'ring-[1vh] ring-yellow-400' : ''
                 }`}
               >

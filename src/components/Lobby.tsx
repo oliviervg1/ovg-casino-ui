@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
 import { GameType } from '../App';
 import { useAssets } from '../hooks/useAssets';
-import { getThemeStyles } from '../utils/themeStyles';
+import { themeManifesto, type ThemeType } from '../utils/themeManifesto';
 import { GAME_REGISTRY } from '../config/games';
 
 interface LobbyProps {
@@ -170,7 +170,7 @@ export function Lobby({ onSelectGame }: LobbyProps) {
                       game.fallback
                     )}
                   </div>
-                  <h3 className={`text-2xl md:text-3xl mb-2 ${getThemeStyles(game.theme).font}`}>{game.name}</h3>
+                  <h3 className={`text-2xl md:text-3xl mb-2 ${themeManifesto[game.theme as ThemeType].font}`}>{game.name}</h3>
                 </motion.div>
               ))}
             </div>

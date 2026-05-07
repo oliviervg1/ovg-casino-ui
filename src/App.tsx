@@ -19,7 +19,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useAssets } from './hooks/useAssets';
 import { User as UserIcon, HelpCircle, BookOpen } from 'lucide-react';
 import { getGameById } from './config/games';
-import { resolveGlobalTheme, lightThemes } from './utils/themeStyles';
 
 export type ThemeType = 'sweets' | 'egypt' | 'space' | 'west' | 'ocean' | 'jungle' | 'vampire' | 'ninja';
 export type GameType = string;
