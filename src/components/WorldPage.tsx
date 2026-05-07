@@ -66,14 +66,12 @@ export function WorldPage() {
           backgroundPosition: 'center',
         }}
       >
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.65) 100%)' }} />
-        <button
-          onClick={() => navigate('/')}
-          className="absolute top-4 left-4 z-10 flex items-center gap-2 px-3 py-1.5 rounded-md bg-black/40 backdrop-blur-sm hover:bg-black/60 text-white text-sm transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" /> Lobby
-        </button>
-        <div className="absolute inset-0 flex items-end p-6 z-10">
+        {/* Vignette — purely decorative; pointer-events-none so clicks pass to the button. */}
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.65) 100%)' }} />
+        {/* Title overlay — also full-bleed and decorative; without pointer-events-none
+            the title wrapper would sit on top of the back button (same z-10, later in
+            DOM order) and intercept every click in the hero area. */}
+        <div className="absolute inset-0 flex items-end p-6 z-10 pointer-events-none">
           <h1
             className={`${m.font} text-white`}
             style={{ fontSize: 'var(--text-display, 2.75rem)', textShadow: '0 4px 12px rgba(0,0,0,0.8)' }}
@@ -81,6 +79,12 @@ export function WorldPage() {
             {m.displayName}
           </h1>
         </div>
+        <button
+          onClick={() => navigate('/')}
+          className="absolute top-4 left-4 z-20 flex items-center gap-2 px-3 py-1.5 rounded-md bg-black/40 backdrop-blur-sm hover:bg-black/60 text-white text-sm transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" /> Lobby
+        </button>
       </div>
 
       {/* 3 themed game cards */}
