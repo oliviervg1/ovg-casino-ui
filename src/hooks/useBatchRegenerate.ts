@@ -47,12 +47,13 @@ interface BatchRegenerateApi {
 }
 
 /**
- * Orchestrates the full 105-asset (81 image + 1 bg_main + 24 music) regenerate
- * batch with bounded concurrency (4) so the per-minute generation limit is
- * not exceeded. Reports progress as a status string and classifies failures.
+ * Orchestrates the full 113-task regenerate batch (81 images: 80 themed +
+ * bg_main; 32 music tracks: 8 themes × 4 contexts roulette/slots/bingo/world)
+ * with bounded concurrency (4) so the per-minute generation limit is not
+ * exceeded. Reports progress as a status string and classifies failures.
  *
  * Concurrency rationale: at RATE_LIMIT_RPM=30 a concurrency of 4 keeps inflight
- * ≤ 4 with steady drain; the full batch finishes in ~3.5 minutes without 429s
+ * ≤ 4 with steady drain; the full batch finishes in ~4 minutes without 429s
  * and without saturating the Firestore quota counter with contention.
  */
 export function useBatchRegenerate(): BatchRegenerateApi {
