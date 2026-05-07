@@ -9,14 +9,17 @@ vi.mock('../hooks/useMusic', () => ({ useMusic: () => ({ musicUrl: null, loading
 import { WorldPage } from './WorldPage';
 import { themeManifesto } from '../utils/themeManifesto';
 import { GAME_REGISTRY } from '../config/games';
+import { AudioControlsProvider, useAudioControls } from '../contexts/AudioControlsContext';
 
 function renderAt(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>
-      <Routes>
-        <Route path="/world/:theme" element={<WorldPage />} />
-        <Route path="/" element={<div>LOBBY</div>} />
-      </Routes>
+      <AudioControlsProvider>
+        <Routes>
+          <Route path="/world/:theme" element={<WorldPage />} />
+          <Route path="/" element={<div>LOBBY</div>} />
+        </Routes>
+      </AudioControlsProvider>
     </MemoryRouter>
   );
 }
@@ -61,5 +64,26 @@ describe('WorldPage', () => {
       renderAt(`/world/${t}`);
       expect(screen.getByText(themeManifesto[t as keyof typeof themeManifesto].displayName)).toBeTruthy();
     });
+  });
+
+  it('registers nowPlaying = { theme, gameType: "world" } while mounted', () => {
+    let capturedNp: any = null;
+    function Probe() {
+      const { nowPlaying } = useAudioControls();
+      capturedNp = nowPlaying;
+      return null;
+    }
+    document.documentElement.setAttribute('data-theme', 'space');
+    render(
+      <MemoryRouter initialEntries={['/world/space']}>
+        <AudioControlsProvider>
+          <Probe />
+          <Routes>
+            <Route path="/world/:theme" element={<WorldPage />} />
+          </Routes>
+        </AudioControlsProvider>
+      </MemoryRouter>
+    );
+    expect(capturedNp).toEqual({ theme: 'space', gameType: 'world' });
   });
 });

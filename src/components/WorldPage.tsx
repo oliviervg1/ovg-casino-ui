@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useAssets } from '../hooks/useAssets';
 import { useMusic } from '../hooks/useMusic';
+import { useAudioControls } from '../contexts/AudioControlsContext';
 import { themeManifesto, THEME_NAMES, type ThemeType } from '../utils/themeManifesto';
 import { GAME_REGISTRY } from '../config/games';
 import { ThemedCard } from './Themed/ThemedCard';
@@ -29,6 +30,13 @@ export function WorldPage() {
   const theme = themeParam;
   const m = themeManifesto[theme];
 
+  const { muted, setNowPlaying } = useAudioControls();
+
+  useEffect(() => {
+    setNowPlaying({ theme, gameType: 'world' });
+    return () => setNowPlaying(null);
+  }, [theme, setNowPlaying]);
+
   // Asset keys for this world: hero bg + 3 game pictograms.
   const assetKeys = useMemo(
     () => [`bg_slots_${theme}`, `roulette_${theme}`, `slots_${theme}`, `bingo_${theme}`],
@@ -49,6 +57,12 @@ export function WorldPage() {
       audioRef.current.play()?.catch(() => { /* autoplay blocked — user gesture required, OK */ });
     }
   }, [musicUrl]);
+
+  // Apply mute changes immediately to a playing audio element. Runs on mount too,
+  // so initial-mount mute state is established here, not in the load effect.
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.muted = muted;
+  }, [muted]);
 
   const games = GAME_REGISTRY.filter(g => g.theme === theme);
 
