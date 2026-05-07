@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { act, cleanup, renderHook } from '@testing-library/react';
 import { useTheme } from './useTheme';
 
 describe('useTheme', () => {
@@ -7,6 +7,7 @@ describe('useTheme', () => {
     document.documentElement.removeAttribute('data-theme');
   });
   afterEach(() => {
+    cleanup();
     document.documentElement.removeAttribute('data-theme');
   });
 
@@ -33,5 +34,22 @@ describe('useTheme', () => {
     document.documentElement.setAttribute('data-theme', 'mystery');
     const { result } = renderHook(() => useTheme());
     expect(result.current.displayName).toBe('Sweets');
+  });
+
+  it('re-renders when data-theme attribute changes mid-session (MutationObserver)', async () => {
+    document.documentElement.setAttribute('data-theme', 'sweets');
+    const { result } = renderHook(() => useTheme());
+    expect(result.current.displayName).toBe('Sweets');
+
+    // Switch the attribute — the MutationObserver inside useTheme should
+    // fire and trigger a re-render with the ninja manifesto.
+    await act(async () => {
+      document.documentElement.setAttribute('data-theme', 'ninja');
+      // Yield a tick so the observer's microtask runs.
+      await Promise.resolve();
+    });
+
+    expect(result.current.displayName).toBe('Ninja');
+    expect(result.current.surface).toBe('dark-wood-paper');
   });
 });
