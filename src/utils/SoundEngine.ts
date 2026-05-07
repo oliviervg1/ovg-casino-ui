@@ -8,12 +8,29 @@ class SoundEngine {
     if (!this.ctx) {
       this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
       this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.value = 0.5; // Increased volume
+      this.masterGain.gain.value = this.muted ? 0 : this.baseVolume;
       this.masterGain.connect(this.ctx.destination);
     }
     if (this.ctx.state === 'suspended') {
       this.ctx.resume();
     }
+  }
+
+  private muted: boolean = (() => {
+    try { return localStorage.getItem('ovg-audio-muted') === 'true'; } catch { return false; }
+  })();
+  private baseVolume = 0.5;
+
+  setMuted(muted: boolean) {
+    this.muted = muted;
+    if (this.masterGain) {
+      this.masterGain.gain.value = muted ? 0 : this.baseVolume;
+    }
+  }
+
+  /** Test-only: read the current master-gain value. Not for production callers. */
+  __getMasterGainValue(): number {
+    return this.masterGain ? this.masterGain.gain.value : 0;
   }
 
   private getThemeConfig(theme: ThemeType) {
