@@ -69,4 +69,16 @@ describe('BingoSurface', () => {
     expect(screen.getByTestId('bingo-cell-2').getAttribute('data-winning-line')).toBe('true');
     expect(screen.getByTestId('bingo-cell-3').getAttribute('data-winning-line')).toBe('true');
   });
+
+  it('passes win through to BingoCard so the BINGO banner shows on win', () => {
+    render(
+      <BingoSurface theme="sweets" game={{ ...baseGame, drawn: [1, 2, 3], lastDrawn: 3, win: 'small' }} />,
+    );
+    expect(screen.getByTestId('bingo-win-banner')).toBeTruthy();
+  });
+
+  it('does not show the BINGO banner when win is null', () => {
+    render(<BingoSurface theme="sweets" game={baseGame} />);
+    expect(screen.queryByTestId('bingo-win-banner')).toBeNull();
+  });
 });

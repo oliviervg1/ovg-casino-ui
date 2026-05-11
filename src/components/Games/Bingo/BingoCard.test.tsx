@@ -112,4 +112,41 @@ describe('BingoCard', () => {
     expect(screen.getByTestId('bingo-cell-5').getAttribute('data-winning-line')).toBe('true');
     expect(screen.getByTestId('bingo-cell-7').getAttribute('data-winning-line')).toBe('true');
   });
+
+  it('does not render the BINGO banner when win is null (or unset)', () => {
+    const board = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+    render(<BingoCard theme="sweets" board={board} drawn={new Set()} lastDrawn={null} lines={noLines} />);
+    expect(screen.queryByTestId('bingo-win-banner')).toBeNull();
+  });
+
+  it('renders the BINGO banner when win="small"', () => {
+    const board = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+    render(
+      <BingoCard
+        theme="sweets"
+        board={board}
+        drawn={new Set([1, 2, 3])}
+        lastDrawn={3}
+        lines={{ ...noLines, rows: [true, false, false] }}
+        win="small"
+      />,
+    );
+    const banner = screen.getByTestId('bingo-win-banner');
+    expect(banner.textContent).toContain('BINGO');
+  });
+
+  it('renders the BINGO banner when win="jackpot"', () => {
+    const board = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+    render(
+      <BingoCard
+        theme="sweets"
+        board={board}
+        drawn={new Set()}
+        lastDrawn={null}
+        lines={noLines}
+        win="jackpot"
+      />,
+    );
+    expect(screen.getByTestId('bingo-win-banner')).toBeTruthy();
+  });
 });

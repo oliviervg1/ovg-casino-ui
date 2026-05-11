@@ -30,6 +30,7 @@ export function BingoSurface({ theme, game }: BingoSurfaceProps) {
           drawn={drawnSet}
           lastDrawn={game.lastDrawn}
           lines={lines}
+          win={game.win}
         />
         <CalledPanel lastDrawn={game.lastDrawn} lines={lines} />
       </div>
