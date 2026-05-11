@@ -41,9 +41,17 @@ export function useSlotsGame(opts: UseSlotsGameOptions): UseSlotsGameReturn {
   // post-spin spinning=true→false flip (which would otherwise wipe a freshly-set winning payline).
   const lastSymbolsKey = useRef<string>('');
   useEffect(() => {
-    if (spinning) return;
     if (symbols.length === 0) return;
     const key = symbols.join('|');
+    if (spinning) {
+      // Track the latest pool key without re-picking, so when spinning ends the
+      // post-spin re-run finds key === lastSymbolsKey.current and early-returns.
+      // Without this, a mid-spin pool change would cause the effect to overwrite
+      // the spin's finalReels at end-of-spin, decoupling visible reels from the
+      // win that was just evaluated.
+      lastSymbolsKey.current = key;
+      return;
+    }
     if (key === lastSymbolsKey.current) return;
     lastSymbolsKey.current = key;
     const pick = () => symbols[Math.floor(Math.random() * symbols.length)];

@@ -109,15 +109,34 @@ describe('useSlotsGame', () => {
     }
   });
 
-  it('does NOT re-pick reelStates when spinning flips back to false (preserves win state)', () => {
-    const { result } = renderHook(() => useSlotsGame({ theme: 'sweets', symbols, balance: 100 }));
+  it('does NOT re-pick reelStates when spinning ends after a mid-spin pool change', () => {
+    const initial = ['🍭', '🧁', '🍬', '🍩'];
+    const urls = [
+      'https://storage.googleapis.com/x/1.png',
+      'https://storage.googleapis.com/x/2.png',
+      'https://storage.googleapis.com/x/3.png',
+      'https://storage.googleapis.com/x/4.png',
+    ];
+    const { result, rerender } = renderHook(
+      ({ symbols }: { symbols: string[] }) =>
+        useSlotsGame({ theme: 'sweets', symbols, balance: 100 }),
+      { initialProps: { symbols: initial } }
+    );
     act(() => { result.current.spin(); });
+    // Mid-spin pool change.
+    rerender({ symbols: urls });
+    // Advance to settle.
     act(() => { vi.advanceTimersByTime(21 * 100 + 50); });
-    // After resolution, reelStates is whatever the spin set. Capture it.
-    const reelsAfterSpin = result.current.reelStates.map(r => ({ ...r }));
-    // Force a re-render with the SAME symbols (simulates an asset refresh that resolved to identical URLs).
-    // The init effect must NOT fire — reelStates should be byte-for-byte identical.
-    act(() => { vi.advanceTimersByTime(0); }); // tick to flush React effects
-    expect(result.current.reelStates).toEqual(reelsAfterSpin);
+    expect(result.current.spinning).toBe(false);
+    // Snapshot the post-settle reels.
+    const reelsAfterSettle = result.current.reelStates.map(r => ({ ...r }));
+    // Tick once more — if the effect would re-fire, this is when it'd happen.
+    act(() => { vi.advanceTimersByTime(0); });
+    // Reels must be unchanged.
+    expect(result.current.reelStates).toEqual(reelsAfterSettle);
+    // (Sanity: the reels WERE picked from URLs, since the spin's setReels read symbolsRef.current after the rerender.)
+    for (const r of result.current.reelStates) {
+      expect(urls).toContain(r.middle);
+    }
   });
 });
