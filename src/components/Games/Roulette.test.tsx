@@ -1,39 +1,56 @@
-import { describe, it, expect, afterEach, vi } from 'vitest';
-import { cleanup, render, screen, fireEvent } from '@testing-library/react';
-import { Roulette } from './Roulette';
+import React from 'react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { AudioControlsProvider } from '../../contexts/AudioControlsContext';
+import { Roulette } from './Roulette';
 
-// GameShell hides children behind a skeleton until assets+music resolve.
-// Stub both hooks so the bet-type buttons (children) actually render.
+vi.mock('../../utils/SoundEngine', () => ({
+  soundEngine: { playRouletteSpin: vi.fn(), playWin: vi.fn(), playLose: vi.fn(), setMuted: vi.fn() },
+}));
 vi.mock('../../hooks/useAssets', () => ({
-  useAssets: () => ({ assets: { bg_roulette_sweets: 'https://x/bg', roulette_sweets: 'https://x/r' }, loading: false }),
+  useAssets: () => ({
+    assets: { bg_roulette_sweets: 'https://x/bg.png', roulette_sweets: 'https://x/icon.png' },
+    loading: false,
+  }),
 }));
-vi.mock('../../hooks/useMusic', () => ({
-  useMusic: () => ({ musicUrl: 'https://x/m', loading: false }),
-}));
+vi.mock('../../hooks/useMusic', () => ({ useMusic: () => ({ musicUrl: null, loading: false }) }));
 
-describe('Roulette', () => {
-  afterEach(() => {
-    cleanup();
-    document.documentElement.removeAttribute('data-theme');
+const renderRoulette = (overrides: Partial<React.ComponentProps<typeof Roulette>> = {}) =>
+  render(
+    <AudioControlsProvider>
+      <Roulette
+        name="Sweet Spin"
+        theme="sweets"
+        balance={100}
+        onUpdateBalance={vi.fn()}
+        onBack={vi.fn()}
+        {...overrides}
+      />
+    </AudioControlsProvider>
+  );
+
+describe('Roulette (integration)', () => {
+  afterEach(() => cleanup());
+
+  it('renders the roulette wheel inside GameShell', () => {
+    renderRoulette();
+    expect(screen.getByTestId('roulette-wheel')).toBeTruthy();
   });
 
-  it('shows "Pick Red / Black / Even / Odd" as the play label until a bet type is chosen', () => {
-    document.documentElement.setAttribute('data-theme', 'sweets');
-    render(
-      <AudioControlsProvider>
-        <Roulette
-          name="Wheel"
-          theme="sweets"
-          balance={100}
-          onUpdateBalance={() => {}}
-          onBack={() => {}}
-        />
-      </AudioControlsProvider>
-    );
-    expect(screen.getByRole('button', { name: /pick red/i })).toBeTruthy();
-    // Choose red, then the SPIN label takes over.
-    fireEvent.click(screen.getByRole('button', { name: 'red' }));
+  it('renders the bet table with 4 cells', () => {
+    renderRoulette();
+    const cells = screen.getAllByTestId(/^bet-cell-/);
+    expect(cells.length).toBe(4);
+  });
+
+  it('hero button label reads "Pick Red / Black / Even / Odd" until a bet type is chosen', () => {
+    renderRoulette();
+    expect(screen.getByRole('button', { name: /pick red \/ black \/ even \/ odd/i })).toBeTruthy();
+  });
+
+  it('after clicking a bet cell, hero button label changes to "SPIN THE WHEEL"', () => {
+    renderRoulette();
+    fireEvent.click(screen.getByTestId('bet-cell-red'));
     expect(screen.getByRole('button', { name: /spin the wheel/i })).toBeTruthy();
   });
 });
