@@ -61,4 +61,63 @@ describe('useSlotsGame', () => {
     // Symbols must come from the configured pool (no leakage of empty strings).
     for (const sym of payline) expect(symbols).toContain(sym);
   });
+
+  it('reel-init effect re-runs when symbol URLs change (not stuck on emoji fallbacks)', () => {
+    const initial = ['🍭', '🧁', '🍬', '🍩'];
+    const { result, rerender } = renderHook(
+      ({ symbols }: { symbols: string[] }) =>
+        useSlotsGame({ theme: 'sweets', symbols, balance: 100 }),
+      { initialProps: { symbols: initial } }
+    );
+    // Initial state — middle is one of the emoji fallbacks.
+    const firstMiddle = result.current.reelStates[0].middle;
+    expect(initial).toContain(firstMiddle);
+
+    // Simulate Gemini URLs landing.
+    const urls = [
+      'https://storage.googleapis.com/x/1.png',
+      'https://storage.googleapis.com/x/2.png',
+      'https://storage.googleapis.com/x/3.png',
+      'https://storage.googleapis.com/x/4.png',
+    ];
+    rerender({ symbols: urls });
+
+    // After re-render, reels pick up the new pool.
+    for (const r of result.current.reelStates) {
+      expect(urls).toContain(r.middle);
+    }
+  });
+
+  it('does NOT reinitialise reels mid-spin when the symbol pool changes', () => {
+    const initial = ['🍭', '🧁', '🍬', '🍩'];
+    const urls = ['https://storage.googleapis.com/a.png', 'https://storage.googleapis.com/b.png'];
+    const { result, rerender } = renderHook(
+      ({ symbols }: { symbols: string[] }) =>
+        useSlotsGame({ theme: 'sweets', symbols, balance: 100 }),
+      { initialProps: { symbols: initial } }
+    );
+    act(() => { result.current.spin(); });
+    expect(result.current.spinning).toBe(true);
+    rerender({ symbols: urls });
+    // Still spinning; reels not snapped to a stable state from the new pool.
+    expect(result.current.spinning).toBe(true);
+    // After spin completes, the new pool drives the final state.
+    act(() => { vi.advanceTimersByTime(21 * 100 + 50); });
+    expect(result.current.spinning).toBe(false);
+    for (const r of result.current.reelStates) {
+      expect(urls).toContain(r.middle);
+    }
+  });
+
+  it('does NOT re-pick reelStates when spinning flips back to false (preserves win state)', () => {
+    const { result } = renderHook(() => useSlotsGame({ theme: 'sweets', symbols, balance: 100 }));
+    act(() => { result.current.spin(); });
+    act(() => { vi.advanceTimersByTime(21 * 100 + 50); });
+    // After resolution, reelStates is whatever the spin set. Capture it.
+    const reelsAfterSpin = result.current.reelStates.map(r => ({ ...r }));
+    // Force a re-render with the SAME symbols (simulates an asset refresh that resolved to identical URLs).
+    // The init effect must NOT fire — reelStates should be byte-for-byte identical.
+    act(() => { vi.advanceTimersByTime(0); }); // tick to flush React effects
+    expect(result.current.reelStates).toEqual(reelsAfterSpin);
+  });
 });

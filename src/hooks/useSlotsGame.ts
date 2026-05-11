@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { evaluateSlotsResult } from '../components/Games/gameLogic';
 import { soundEngine } from '../utils/SoundEngine';
 import type { ThemeType } from '../utils/themeManifesto';
@@ -35,6 +35,24 @@ export function useSlotsGame(opts: UseSlotsGameOptions): UseSlotsGameReturn {
   // Keep the latest props readable from inside setInterval without re-creating the spin closure.
   const symbolsRef = useRef(symbols);
   symbolsRef.current = symbols;
+
+  // Re-init reels whenever the symbol pool changes (e.g. emoji fallbacks → Gemini URLs land).
+  // Gated by a ref so the effect doesn't fire on identity-only re-renders or on the
+  // post-spin spinning=true→false flip (which would otherwise wipe a freshly-set winning payline).
+  const lastSymbolsKey = useRef<string>('');
+  useEffect(() => {
+    if (spinning) return;
+    if (symbols.length === 0) return;
+    const key = symbols.join('|');
+    if (key === lastSymbolsKey.current) return;
+    lastSymbolsKey.current = key;
+    const pick = () => symbols[Math.floor(Math.random() * symbols.length)];
+    setReelStates([
+      { top: pick(), middle: pick(), bottom: pick() },
+      { top: pick(), middle: pick(), bottom: pick() },
+      { top: pick(), middle: pick(), bottom: pick() },
+    ]);
+  }, [symbols, spinning]);
 
   const spin = useCallback(() => {
     if (spinning || balance < bet || symbols.length === 0) return;
