@@ -31,16 +31,21 @@ describe('useSlotsGame', () => {
     expect(result.current.message).toBeNull();
   });
 
-  it('spin() resolves to a final state after 20 cycles × 100ms', () => {
+  it('spin() spinning state lasts ~2500ms (longest reel stop)', () => {
     const onUpdateBalance = vi.fn();
     const { result } = renderHook(() => useSlotsGame({ theme: 'sweets', symbols, balance: 100, onUpdateBalance }));
     act(() => { result.current.spin(); });
-    // Loop terminates on the 21st tick (`spins > 20`), so advance past 21 * 100ms
-    // to give the post-tick state updates a chance to flush.
-    act(() => { vi.advanceTimersByTime(21 * 100 + 50); });
+
+    // At 2400ms, still spinning (only reels 0+1 have stopped visually).
+    act(() => { vi.advanceTimersByTime(2400); });
+    expect(result.current.spinning).toBe(true);
+
+    // At 2600ms, all three reels have settled and the win has been evaluated.
+    act(() => { vi.advanceTimersByTime(200); });
     expect(result.current.spinning).toBe(false);
-    expect(onUpdateBalance).toHaveBeenCalledWith(-10); // bet deducted at spin start
-    expect(result.current.reelStates[0].middle).not.toBe('');
+
+    // Bet was deducted at the start; nothing else happens between deduct and possible payout.
+    expect(onUpdateBalance).toHaveBeenCalledWith(-10);
   });
 
   it('exposes reelStates with {top, middle, bottom} per reel', () => {
@@ -56,7 +61,7 @@ describe('useSlotsGame', () => {
   it('after spin, middle row symbols are the payline (used by evaluateSlotsResult)', () => {
     const { result } = renderHook(() => useSlotsGame({ theme: 'sweets', symbols, balance: 100 }));
     act(() => { result.current.spin(); });
-    act(() => { vi.advanceTimersByTime(21 * 100 + 50); });
+    act(() => { vi.advanceTimersByTime(2500 + 50); });
     const payline = result.current.reelStates.map(r => r.middle);
     // Symbols must come from the configured pool (no leakage of empty strings).
     for (const sym of payline) expect(symbols).toContain(sym);
@@ -102,7 +107,7 @@ describe('useSlotsGame', () => {
     // Still spinning; reels not snapped to a stable state from the new pool.
     expect(result.current.spinning).toBe(true);
     // After spin completes, the new pool drives the final state.
-    act(() => { vi.advanceTimersByTime(21 * 100 + 50); });
+    act(() => { vi.advanceTimersByTime(2500 + 50); });
     expect(result.current.spinning).toBe(false);
     for (const r of result.current.reelStates) {
       expect(urls).toContain(r.middle);
@@ -126,7 +131,7 @@ describe('useSlotsGame', () => {
     // Mid-spin pool change.
     rerender({ symbols: urls });
     // Advance to settle.
-    act(() => { vi.advanceTimersByTime(21 * 100 + 50); });
+    act(() => { vi.advanceTimersByTime(2500 + 50); });
     expect(result.current.spinning).toBe(false);
     // Snapshot the post-settle reels.
     const reelsAfterSettle = result.current.reelStates.map(r => ({ ...r }));

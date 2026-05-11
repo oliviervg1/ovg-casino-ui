@@ -24,6 +24,13 @@ export interface UseSlotsGameReturn {
 
 const emptyCells: ReelCells = { top: '', middle: '', bottom: '' };
 
+/**
+ * Spin settle time, in ms. Aligned with SlotReel's slowest staggered stop
+ * (reel index 2 stops at 2500ms — see `STAGGER_MS` in `Slots/SlotReel.tsx`).
+ * Visual cycling runs every 100ms until this point; win evaluation fires here.
+ */
+const SETTLE_MS = 2500;
+
 export function useSlotsGame(opts: UseSlotsGameOptions): UseSlotsGameReturn {
   const { theme, symbols, balance, onUpdateBalance } = opts;
   const [bet, setBet] = useState(10);
@@ -68,40 +75,46 @@ export function useSlotsGame(opts: UseSlotsGameOptions): UseSlotsGameReturn {
     setWin(null);
     setMessage(null);
     onUpdateBalance?.(-bet);
-    soundEngine.playSlotSpin(theme, 2000);
+    soundEngine.playSlotSpin(theme, SETTLE_MS);
 
     const pick = () => symbolsRef.current[Math.floor(Math.random() * symbolsRef.current.length)];
     const pickReel = (): ReelCells => ({ top: pick(), middle: pick(), bottom: pick() });
-    let spins = 0;
-    const interval = setInterval(() => {
-      setReelStates([pickReel(), pickReel(), pickReel()]);
-      spins++;
-      if (spins > 20) {
-        clearInterval(interval);
-        const finalReels: [ReelCells, ReelCells, ReelCells] = [pickReel(), pickReel(), pickReel()];
-        setReelStates(finalReels);
 
-        const payline = finalReels.map(r => r.middle);
-        const result = evaluateSlotsResult(payline);
-        if (result === 'jackpot') {
-          const payout = bet * 50;
-          onUpdateBalance?.(payout);
-          setWin('jackpot');
-          setMessage(`JACKPOT! +${payout}`);
-          soundEngine.playWin(theme);
-        } else if (result === 'small') {
-          const payout = bet * 3;
-          onUpdateBalance?.(payout);
-          setWin('small');
-          setMessage(`Small win: +${payout}`);
-          soundEngine.playWin(theme);
-        } else {
-          setMessage('No match. Try again.');
-          soundEngine.playLose(theme);
-        }
-        setSpinning(false);
-      }
+    // Live cycling for the visual reel-state change while spinning is still useful as a fallback
+    // when SlotReel's animated stack isn't visible (test/jsdom environments). Cap at the slowest
+    // reel duration so cycling stops in lockstep with the visual.
+    const cycleInterval = setInterval(() => {
+      setReelStates([pickReel(), pickReel(), pickReel()]);
     }, 100);
+
+    setTimeout(() => {
+      clearInterval(cycleInterval);
+      const finalReels: [ReelCells, ReelCells, ReelCells] = [pickReel(), pickReel(), pickReel()];
+      setReelStates(finalReels);
+
+      const payline = finalReels.map(r => r.middle);
+      const result = evaluateSlotsResult(payline);
+      if (result === 'jackpot') {
+        const payout = bet * 50;
+        onUpdateBalance?.(payout);
+        setWin('jackpot');
+        setMessage(`JACKPOT! +${payout}`);
+        soundEngine.playWin(theme);
+      } else if (result === 'small') {
+        const payout = bet * 3;
+        onUpdateBalance?.(payout);
+        setWin('small');
+        setMessage(`Small win: +${payout}`);
+        soundEngine.playWin(theme);
+      } else {
+        setMessage('No match. Try again.');
+        soundEngine.playLose(theme);
+      }
+      setSpinning(false);
+    }, SETTLE_MS);
+
+    // No need to return a cleanup from spin() itself — the spin function is invoked imperatively;
+    // the interval + timeout always reach completion within SETTLE_MS and clean themselves up.
   }, [bet, balance, theme, spinning, onUpdateBalance, symbols.length]);
 
   return { bet, setBet, reelStates, spinning, win, message, spin };
