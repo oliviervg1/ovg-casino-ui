@@ -32,4 +32,22 @@ describe('SlotMachine', () => {
     render(<SlotMachine theme="sweets" game={{ ...baseGame, win: 'jackpot' }} symbols={['🍭']} />);
     expect(screen.getByTestId('payline-strip').getAttribute('data-state')).toBe('win');
   });
+
+  it('marks middle-row symbols as winning when game.win is set', () => {
+    render(
+      <SlotMachine
+        theme="sweets"
+        game={{ ...baseGame, win: 'jackpot' }}
+        symbols={['🍭', '🧁', '🍬']}
+      />
+    );
+    // Each reel renders 3 SlotSymbol elements; the middle one should be data-winning="true".
+    const reels = screen.getAllByTestId('slot-reel');
+    for (const reel of reels) {
+      const cells = reel.querySelectorAll('[data-cell]');
+      expect(cells[1].getAttribute('data-cell')).toBe('middle');
+      const innerSymbol = cells[1].querySelector('[data-testid="slot-symbol"]');
+      expect(innerSymbol?.getAttribute('data-winning')).toBe('true');
+    }
+  });
 });
