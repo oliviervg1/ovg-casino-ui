@@ -10,6 +10,8 @@ export interface RouletteWheelProps {
   wheelRotation: number;
   /** Cumulative ball rotation in degrees (counter-clockwise, so always ≤ 0). */
   ballRotation: number;
+  /** When set, the wheel highlights the result pocket and the cone scale-pulses. */
+  win?: 'jackpot' | 'small' | null;
 }
 
 const SEGMENT_FILL: Record<'red' | 'black' | 'green', string> = {
@@ -21,12 +23,13 @@ const SEGMENT_FILL: Record<'red' | 'black' | 'green', string> = {
 const SPIN_DURATION_S = 2.5;
 const SPIN_EASE = [0.15, 0, 0.25, 1] as const;
 
-export function RouletteWheel({ theme, spinning, resultNum, wheelRotation, ballRotation }: RouletteWheelProps) {
+export function RouletteWheel({ theme, spinning, resultNum, wheelRotation, ballRotation, win = null }: RouletteWheelProps) {
   const segments = getRouletteSegments();
   const ballPocket = resultNum ?? 0;
   const transition = spinning
     ? { duration: SPIN_DURATION_S, ease: SPIN_EASE }
     : { duration: 0 };
+  const isWinning = win !== null;
 
   return (
     <div
@@ -47,17 +50,21 @@ export function RouletteWheel({ theme, spinning, resultNum, wheelRotation, ballR
           transition={transition}
           style={{ transformOrigin: '50px 50px' }}
         >
-          {segments.map(seg => (
-            <path
-              key={seg.number}
-              d={seg.path}
-              fill={SEGMENT_FILL[seg.colour]}
-              stroke="#fbbf24"
-              strokeWidth={0.15}
-              data-pocket={seg.number}
-              data-colour={seg.colour}
-            />
-          ))}
+          {segments.map(seg => {
+            const winningPocket = resultNum !== null && seg.number === resultNum && isWinning;
+            return (
+              <path
+                key={seg.number}
+                d={seg.path}
+                fill={SEGMENT_FILL[seg.colour]}
+                stroke={winningPocket ? '#facc15' : '#fbbf24'}
+                strokeWidth={winningPocket ? 0.6 : 0.15}
+                data-pocket={seg.number}
+                data-colour={seg.colour}
+                data-winning={winningPocket ? 'true' : 'false'}
+              />
+            );
+          })}
           {segments.map(seg => (
             <text
               key={`label-${seg.number}`}
@@ -81,13 +88,16 @@ export function RouletteWheel({ theme, spinning, resultNum, wheelRotation, ballR
         className="absolute inset-0 rounded-full border-[1.2vh] border-theme-primary pointer-events-none shadow-[inset_0_0_30px_rgba(0,0,0,0.5)]"
       />
 
-      <div
+      <motion.div
         data-testid="roulette-cone"
         data-pocket={resultNum ?? ''}
+        data-winning={isWinning ? 'true' : 'false'}
+        animate={isWinning ? { scale: [1, 1.15, 1] } : { scale: 1 }}
+        transition={{ duration: 0.6, repeat: isWinning ? 2 : 0, ease: 'easeInOut' }}
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[35%] h-[35%] rounded-full bg-theme-bg border-[0.5vh] border-theme-accent flex items-center justify-center text-[5vh] md:text-[6vh] font-bold text-theme-accent shadow-[0_0_20px_rgba(0,0,0,0.4)] z-10"
       >
         {resultNum !== null ? resultNum : '—'}
-      </div>
+      </motion.div>
 
       <motion.div
         data-testid="roulette-ball"

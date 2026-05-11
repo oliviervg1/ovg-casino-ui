@@ -77,4 +77,20 @@ describe('RouletteWheel', () => {
     render(<RouletteWheel theme="sweets" spinning={false} resultNum={null} wheelRotation={0} ballRotation={0} />);
     expect(screen.getByTestId('roulette-wheel-segments')).toBeTruthy();
   });
+
+  it('marks the result pocket with data-winning="true" when win prop is set', () => {
+    render(<RouletteWheel theme="sweets" spinning={false} resultNum={17} wheelRotation={0} ballRotation={0} win="small" />);
+    const pocket17 = screen.getByTestId('roulette-wheel-frame').querySelector('path[data-pocket="17"]');
+    expect(pocket17?.getAttribute('data-winning')).toBe('true');
+  });
+
+  it('inner cone has data-winning="true" when win prop is set', () => {
+    render(<RouletteWheel theme="sweets" spinning={false} resultNum={17} wheelRotation={0} ballRotation={0} win="jackpot" />);
+    expect(screen.getByTestId('roulette-cone').getAttribute('data-winning')).toBe('true');
+  });
+
+  it('inner cone has data-winning="false" when win is null', () => {
+    render(<RouletteWheel theme="sweets" spinning={false} resultNum={17} wheelRotation={0} ballRotation={0} win={null} />);
+    expect(screen.getByTestId('roulette-cone').getAttribute('data-winning')).toBe('false');
+  });
 });

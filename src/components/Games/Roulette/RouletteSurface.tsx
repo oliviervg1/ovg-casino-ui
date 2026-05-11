@@ -19,6 +19,7 @@ export function RouletteSurface({ theme, game }: RouletteSurfaceProps) {
           resultNum={game.resultNum}
           wheelRotation={game.wheelRotation}
           ballRotation={game.ballRotation}
+          win={game.win}
         />
       </div>
       <BetTable
