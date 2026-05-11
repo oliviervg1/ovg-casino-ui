@@ -32,3 +32,12 @@ export function evaluateBingoBoard(board: number[][], drawn: number[]): boolean 
   if (board.every((row, i) => drawnSet.has(row[n - 1 - i]))) return true;
   return false;
 }
+
+/** Map a roulette pocket number (0..36) to its centre angle in degrees on the wheel.
+ *  Wheel is laid out in numerical order (demo simplification — not the real European
+ *  irregular ordering). Pocket 0 is at angle 0°; each subsequent pocket is one wedge
+ *  (360/37 ≈ 9.73°) further clockwise.
+ */
+export function angleOfPocket(n: number): number {
+  return n * (360 / 37);
+}

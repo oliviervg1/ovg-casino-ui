@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { evaluateRouletteBet, evaluateSlotsResult, evaluateBingoBoard } from './gameLogic';
+import { evaluateRouletteBet, evaluateSlotsResult, evaluateBingoBoard, angleOfPocket } from './gameLogic';
 
 describe('evaluateRouletteBet', () => {
   it('matches when betType is the chosen number', () => {
@@ -39,5 +39,26 @@ describe('evaluateBingoBoard', () => {
   it('returns false otherwise', () => {
     const board = [[1,2,3],[4,5,6],[7,8,9]];
     expect(evaluateBingoBoard(board, [1,2,4,8])).toBe(false);
+  });
+});
+
+describe('angleOfPocket', () => {
+  it('returns 0 for pocket 0', () => {
+    expect(angleOfPocket(0)).toBe(0);
+  });
+
+  it('returns 360/37 for pocket 1 (one wedge clockwise)', () => {
+    expect(angleOfPocket(1)).toBeCloseTo(360 / 37, 6);
+  });
+
+  it('returns 36 × (360/37) for pocket 36 (just shy of a full revolution)', () => {
+    expect(angleOfPocket(36)).toBeCloseTo(36 * (360 / 37), 6);
+    expect(angleOfPocket(36)).toBeLessThan(360);
+  });
+
+  it('is monotonic across the full pocket range', () => {
+    for (let n = 1; n <= 36; n++) {
+      expect(angleOfPocket(n)).toBeGreaterThan(angleOfPocket(n - 1));
+    }
   });
 });
