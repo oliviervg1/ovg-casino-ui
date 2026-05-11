@@ -1,11 +1,15 @@
+import { motion } from 'motion/react';
 import { type ThemeType } from '../../../utils/themeManifesto';
-import { angleOfPocket } from '../gameLogic';
 import { getRouletteSegments } from './RouletteSegments';
 
 export interface RouletteWheelProps {
   theme: ThemeType;
   spinning: boolean;
   resultNum: number | null;
+  /** Cumulative wheel rotation in degrees (clockwise positive). Owned by `useRouletteGame`. */
+  wheelRotation: number;
+  /** Cumulative ball rotation in degrees (counter-clockwise, so always ≤ 0). */
+  ballRotation: number;
 }
 
 const SEGMENT_FILL: Record<'red' | 'black' | 'green', string> = {
@@ -14,14 +18,21 @@ const SEGMENT_FILL: Record<'red' | 'black' | 'green', string> = {
   green: '#16a34a',
 };
 
-export function RouletteWheel({ theme, spinning: _spinning, resultNum }: RouletteWheelProps) {
+const SPIN_DURATION_S = 2.5;
+const SPIN_EASE = [0.15, 0, 0.25, 1] as const;
+
+export function RouletteWheel({ theme, spinning, resultNum, wheelRotation, ballRotation }: RouletteWheelProps) {
   const segments = getRouletteSegments();
   const ballPocket = resultNum ?? 0;
-  const ballAngle = angleOfPocket(ballPocket);
+  const transition = spinning
+    ? { duration: SPIN_DURATION_S, ease: SPIN_EASE }
+    : { duration: 0 };
+
   return (
     <div
       data-testid="roulette-wheel-frame"
       data-theme={theme}
+      data-spinning={spinning ? 'true' : 'false'}
       className="relative w-[35vh] h-[35vh] md:w-[45vh] md:h-[45vh]"
     >
       <svg
@@ -30,32 +41,39 @@ export function RouletteWheel({ theme, spinning: _spinning, resultNum }: Roulett
         viewBox="0 0 100 100"
         className="absolute inset-0 w-full h-full"
       >
-        {segments.map(seg => (
-          <path
-            key={seg.number}
-            d={seg.path}
-            fill={SEGMENT_FILL[seg.colour]}
-            stroke="#fbbf24"
-            strokeWidth={0.15}
-            data-pocket={seg.number}
-            data-colour={seg.colour}
-          />
-        ))}
-        {segments.map(seg => (
-          <text
-            key={`label-${seg.number}`}
-            x={seg.labelX}
-            y={seg.labelY}
-            fontSize={3}
-            fill="#fff"
-            textAnchor="middle"
-            dominantBaseline="central"
-            data-pocket-label={seg.number}
-            transform={`rotate(${seg.labelAngle} ${seg.labelX} ${seg.labelY})`}
-          >
-            {seg.number}
-          </text>
-        ))}
+        <motion.g
+          data-testid="roulette-wheel-segments"
+          animate={{ rotate: wheelRotation }}
+          transition={transition}
+          style={{ transformOrigin: '50px 50px' }}
+        >
+          {segments.map(seg => (
+            <path
+              key={seg.number}
+              d={seg.path}
+              fill={SEGMENT_FILL[seg.colour]}
+              stroke="#fbbf24"
+              strokeWidth={0.15}
+              data-pocket={seg.number}
+              data-colour={seg.colour}
+            />
+          ))}
+          {segments.map(seg => (
+            <text
+              key={`label-${seg.number}`}
+              x={seg.labelX}
+              y={seg.labelY}
+              fontSize={3}
+              fill="#fff"
+              textAnchor="middle"
+              dominantBaseline="central"
+              data-pocket-label={seg.number}
+              transform={`rotate(${seg.labelAngle} ${seg.labelX} ${seg.labelY})`}
+            >
+              {seg.number}
+            </text>
+          ))}
+        </motion.g>
       </svg>
 
       <div
@@ -71,14 +89,21 @@ export function RouletteWheel({ theme, spinning: _spinning, resultNum }: Roulett
         {resultNum !== null ? resultNum : '—'}
       </div>
 
-      <div
+      <motion.div
         data-testid="roulette-ball"
         data-pocket={ballPocket}
+        animate={{ rotate: ballRotation }}
+        transition={transition}
         className="absolute top-1/2 left-1/2 w-[2vh] h-[2vh] -mt-[1vh] -ml-[1vh] z-10 pointer-events-none"
-        style={{ transform: `rotate(${ballAngle}deg) translateY(-37%)` }}
+        style={{ transformOrigin: '50% 50%' }}
       >
-        <div className="w-full h-full rounded-full bg-white border-[0.3vh] border-theme-accent shadow-[0_0_8px_rgba(255,255,255,0.6)]" />
-      </div>
+        <div
+          className="w-full h-full"
+          style={{ transform: 'translateY(-16.5vh)' }}
+        >
+          <div className="w-full h-full rounded-full bg-white border-[0.3vh] border-theme-accent shadow-[0_0_8px_rgba(255,255,255,0.6)]" />
+        </div>
+      </motion.div>
 
       <div
         data-testid="roulette-pointer"
