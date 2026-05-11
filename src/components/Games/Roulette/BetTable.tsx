@@ -22,7 +22,7 @@ export function BetTable({ bet, betType, onSelect, disabled }: BetTableProps) {
   return (
     <div
       data-testid="bet-table"
-      className="w-full max-w-2xl rounded-xl p-3 md:p-4 bg-[repeating-linear-gradient(45deg,_#065f46_0px,_#065f46_8px,_#047857_8px,_#047857_16px)] shadow-[inset_0_0_20px_rgba(0,0,0,0.4)]"
+      className="w-full max-w-2xl rounded-xl p-3 md:p-4 bg-[repeating-linear-gradient(45deg,_var(--theme-secondary)_0px,_var(--theme-secondary)_8px,_var(--theme-primary)_8px,_var(--theme-primary)_16px)] shadow-[inset_0_0_20px_rgba(0,0,0,0.4)]"
     >
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         {BET_CELLS.map(type => {
