@@ -53,4 +53,16 @@ describe('RouletteWheel', () => {
     rerender(<RouletteWheel theme="sweets" spinning={false} resultNum={17} />);
     expect(screen.getByTestId('roulette-cone').textContent).toContain('17');
   });
+
+  it('renders the orbiting ball with data-testid="roulette-ball"', () => {
+    render(<RouletteWheel theme="sweets" spinning={false} resultNum={null} />);
+    expect(screen.getByTestId('roulette-ball')).toBeTruthy();
+  });
+
+  it('ball data-pocket attribute reflects resultNum (or 0 when null)', () => {
+    const { rerender } = render(<RouletteWheel theme="sweets" spinning={false} resultNum={null} />);
+    expect(screen.getByTestId('roulette-ball').getAttribute('data-pocket')).toBe('0');
+    rerender(<RouletteWheel theme="sweets" spinning={false} resultNum={17} />);
+    expect(screen.getByTestId('roulette-ball').getAttribute('data-pocket')).toBe('17');
+  });
 });

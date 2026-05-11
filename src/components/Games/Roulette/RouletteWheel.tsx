@@ -1,4 +1,5 @@
 import { type ThemeType } from '../../../utils/themeManifesto';
+import { angleOfPocket } from '../gameLogic';
 import { getRouletteSegments } from './RouletteSegments';
 
 export interface RouletteWheelProps {
@@ -15,6 +16,8 @@ const SEGMENT_FILL: Record<'red' | 'black' | 'green', string> = {
 
 export function RouletteWheel({ theme, spinning: _spinning, resultNum }: RouletteWheelProps) {
   const segments = getRouletteSegments();
+  const ballPocket = resultNum ?? 0;
+  const ballAngle = angleOfPocket(ballPocket);
   return (
     <div
       data-testid="roulette-wheel-frame"
@@ -63,9 +66,18 @@ export function RouletteWheel({ theme, spinning: _spinning, resultNum }: Roulett
       <div
         data-testid="roulette-cone"
         data-pocket={resultNum ?? ''}
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[35%] h-[35%] rounded-full bg-theme-bg border-[0.5vh] border-theme-accent flex items-center justify-center text-[5vh] md:text-[6vh] font-bold text-theme-accent shadow-[0_0_20px_rgba(0,0,0,0.4)]"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[35%] h-[35%] rounded-full bg-theme-bg border-[0.5vh] border-theme-accent flex items-center justify-center text-[5vh] md:text-[6vh] font-bold text-theme-accent shadow-[0_0_20px_rgba(0,0,0,0.4)] z-10"
       >
         {resultNum !== null ? resultNum : '—'}
+      </div>
+
+      <div
+        data-testid="roulette-ball"
+        data-pocket={ballPocket}
+        className="absolute top-1/2 left-1/2 w-[2vh] h-[2vh] -mt-[1vh] -ml-[1vh] z-10 pointer-events-none"
+        style={{ transform: `rotate(${ballAngle}deg) translateY(-37%)` }}
+      >
+        <div className="w-full h-full rounded-full bg-white border-[0.3vh] border-theme-accent shadow-[0_0_8px_rgba(255,255,255,0.6)]" />
       </div>
 
       <div
