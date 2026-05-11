@@ -15,7 +15,10 @@ export function CalledTrack({ theme, drawn }: CalledTrackProps) {
       data-theme={theme}
       className="w-full max-w-2xl flex flex-col gap-2 p-3 md:p-4 rounded-2xl bg-theme-bg/70 backdrop-blur-sm border-[0.3vh] border-theme-primary/40"
     >
-      <div className="text-[1.5vh] md:text-[1.6vh] uppercase tracking-wider text-theme-text/70 font-semibold flex justify-between items-baseline">
+      <div
+        data-testid="called-track-caption"
+        className="text-[1.5vh] md:text-[1.6vh] uppercase tracking-wider text-theme-text/70 font-semibold flex justify-between items-baseline"
+      >
         <span>Called so far</span>
         <span className="text-theme-accent normal-case tracking-normal">
           <span className="font-bold">{drawn.size}</span>

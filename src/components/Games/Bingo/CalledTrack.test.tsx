@@ -27,7 +27,7 @@ describe('CalledTrack', () => {
 
   it('shows the caption "Called so far · N / 12" with N = drawn.size', () => {
     render(<CalledTrack theme="sweets" drawn={new Set([5, 17, 22])} />);
-    const text = screen.getByTestId('called-track').textContent ?? '';
+    const text = screen.getByTestId('called-track-caption').textContent ?? '';
     expect(text).toContain('Called so far');
     expect(text).toContain('3');
     expect(text).toContain('12');
@@ -35,8 +35,8 @@ describe('CalledTrack', () => {
 
   it('caption updates when drawn changes', () => {
     const { rerender } = render(<CalledTrack theme="sweets" drawn={new Set([1])} />);
-    expect(screen.getByTestId('called-track').textContent).toContain('1');
+    expect(screen.getByTestId('called-track-caption').textContent).toContain('1');
     rerender(<CalledTrack theme="sweets" drawn={new Set([1, 2, 3, 4, 5, 6, 7])} />);
-    expect(screen.getByTestId('called-track').textContent).toContain('7');
+    expect(screen.getByTestId('called-track-caption').textContent).toContain('7');
   });
 });
