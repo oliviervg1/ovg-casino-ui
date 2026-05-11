@@ -41,3 +41,35 @@ export function evaluateBingoBoard(board: number[][], drawn: number[]): boolean 
 export function angleOfPocket(n: number): number {
   return n * (360 / 37);
 }
+
+/** Per-line bingo completion mask. Used by both `BingoCard` (per-cell ring derivation)
+ *  and `CalledPanel` (4-row tracker). 3×3 board → 3 rows + 3 cols + 2 diagonals.
+ *  diags[0] = main (0,0)→(1,1)→(2,2); diags[1] = anti (0,2)→(1,1)→(2,0). */
+export interface BingoLines {
+  rows: [boolean, boolean, boolean];
+  cols: [boolean, boolean, boolean];
+  diags: [boolean, boolean];
+}
+
+/** Pure: derive line-completion mask from a 3×3 board + drawn-numbers list.
+ *  Existing `evaluateBingoBoard` (boolean "any line complete") is left verbatim;
+ *  this is its strictly-additive sibling that returns the per-line breakdown. */
+export function evaluateBingoLines(board: number[][], drawn: number[]): BingoLines {
+  const drawnSet = new Set(drawn);
+  return {
+    rows: [
+      board[0].every(v => drawnSet.has(v)),
+      board[1].every(v => drawnSet.has(v)),
+      board[2].every(v => drawnSet.has(v)),
+    ],
+    cols: [
+      board.every(row => drawnSet.has(row[0])),
+      board.every(row => drawnSet.has(row[1])),
+      board.every(row => drawnSet.has(row[2])),
+    ],
+    diags: [
+      board.every((row, i) => drawnSet.has(row[i])),
+      board.every((row, i) => drawnSet.has(row[2 - i])),
+    ],
+  };
+}
