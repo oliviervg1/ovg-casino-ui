@@ -32,4 +32,27 @@ describe('SlotReel', () => {
     render(<SlotReel cells={cells} index={2} spinning={false} />);
     expect(screen.getByTestId('slot-reel').getAttribute('data-reel-index')).toBe('2');
   });
+
+  it('renders the spin scroll stack while spinning', () => {
+    render(<SlotReel cells={cells} index={0} spinning={true} pool={['🍭', '🧁', '🍬', '🍩']} />);
+    const stack = screen.getByTestId('slot-reel-stack');
+    expect(stack).toBeTruthy();
+    // 12-deep virtual stack + the 3 final cells stays in DOM during spin.
+    const stackCells = stack.querySelectorAll('[data-stack-cell]');
+    expect(stackCells.length).toBeGreaterThanOrEqual(12);
+  });
+
+  it('does NOT render the spin stack when spinning=false (snaps to static cells)', () => {
+    render(<SlotReel cells={cells} index={0} spinning={false} pool={['🍭']} />);
+    expect(screen.queryByTestId('slot-reel-stack')).toBeNull();
+  });
+
+  it('staggers stop duration by reel index (1.5s / 2.0s / 2.5s)', () => {
+    const { rerender } = render(<SlotReel cells={cells} index={0} spinning={true} pool={['🍭']} />);
+    expect(screen.getByTestId('slot-reel').getAttribute('data-stop-duration')).toBe('1500');
+    rerender(<SlotReel cells={cells} index={1} spinning={true} pool={['🍭']} />);
+    expect(screen.getByTestId('slot-reel').getAttribute('data-stop-duration')).toBe('2000');
+    rerender(<SlotReel cells={cells} index={2} spinning={true} pool={['🍭']} />);
+    expect(screen.getByTestId('slot-reel').getAttribute('data-stop-duration')).toBe('2500');
+  });
 });
