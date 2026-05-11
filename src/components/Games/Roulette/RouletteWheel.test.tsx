@@ -14,7 +14,7 @@ describe('RouletteWheel', () => {
 
   it('renders 37 segment paths with data-pocket attributes 0..36', () => {
     const { container } = render(<RouletteWheel theme="sweets" spinning={false} resultNum={null} />);
-    const paths = container.querySelectorAll('[data-pocket]');
+    const paths = container.querySelectorAll('path[data-pocket]');
     expect(paths.length).toBe(37);
     const pockets = Array.from(paths).map(p => Number(p.getAttribute('data-pocket')));
     expect(pockets).toEqual([...Array(37).keys()]);
@@ -22,7 +22,7 @@ describe('RouletteWheel', () => {
 
   it('marks pocket 0 with data-colour="green"', () => {
     const { container } = render(<RouletteWheel theme="sweets" spinning={false} resultNum={null} />);
-    const zero = container.querySelector('[data-pocket="0"]');
+    const zero = container.querySelector('path[data-pocket="0"]');
     expect(zero?.getAttribute('data-colour')).toBe('green');
   });
 
@@ -30,5 +30,27 @@ describe('RouletteWheel', () => {
     const { container } = render(<RouletteWheel theme="sweets" spinning={false} resultNum={null} />);
     const labels = container.querySelectorAll('[data-pocket-label]');
     expect(labels.length).toBe(37);
+  });
+
+  it('renders the outer rim with data-testid="roulette-rim"', () => {
+    render(<RouletteWheel theme="sweets" spinning={false} resultNum={null} />);
+    expect(screen.getByTestId('roulette-rim')).toBeTruthy();
+  });
+
+  it('renders the inner cone with data-testid="roulette-cone"', () => {
+    render(<RouletteWheel theme="sweets" spinning={false} resultNum={null} />);
+    expect(screen.getByTestId('roulette-cone')).toBeTruthy();
+  });
+
+  it('renders the fixed pointer with data-testid="roulette-pointer"', () => {
+    render(<RouletteWheel theme="sweets" spinning={false} resultNum={null} />);
+    expect(screen.getByTestId('roulette-pointer')).toBeTruthy();
+  });
+
+  it('cone shows the result number when resultNum is set, "—" when null', () => {
+    const { rerender } = render(<RouletteWheel theme="sweets" spinning={false} resultNum={null} />);
+    expect(screen.getByTestId('roulette-cone').textContent).toContain('—');
+    rerender(<RouletteWheel theme="sweets" spinning={false} resultNum={17} />);
+    expect(screen.getByTestId('roulette-cone').textContent).toContain('17');
   });
 });

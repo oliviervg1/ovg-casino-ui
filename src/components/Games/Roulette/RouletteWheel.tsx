@@ -4,7 +4,6 @@ import { getRouletteSegments } from './RouletteSegments';
 export interface RouletteWheelProps {
   theme: ThemeType;
   spinning: boolean;
-  /** When set (after a spin settles), the wheel rests at this pocket's angle. */
   resultNum: number | null;
 }
 
@@ -14,41 +13,65 @@ const SEGMENT_FILL: Record<'red' | 'black' | 'green', string> = {
   green: '#16a34a',
 };
 
-export function RouletteWheel({ theme, spinning: _spinning, resultNum: _resultNum }: RouletteWheelProps) {
+export function RouletteWheel({ theme, spinning: _spinning, resultNum }: RouletteWheelProps) {
   const segments = getRouletteSegments();
   return (
-    <svg
-      data-testid="roulette-wheel"
+    <div
+      data-testid="roulette-wheel-frame"
       data-theme={theme}
-      viewBox="0 0 100 100"
-      className="w-[35vh] h-[35vh] md:w-[45vh] md:h-[45vh]"
+      className="relative w-[35vh] h-[35vh] md:w-[45vh] md:h-[45vh]"
     >
-      {segments.map(seg => (
-        <path
-          key={seg.number}
-          d={seg.path}
-          fill={SEGMENT_FILL[seg.colour]}
-          stroke="#fbbf24"
-          strokeWidth={0.15}
-          data-pocket={seg.number}
-          data-colour={seg.colour}
-        />
-      ))}
-      {segments.map(seg => (
-        <text
-          key={`label-${seg.number}`}
-          x={seg.labelX}
-          y={seg.labelY}
-          fontSize={3}
-          fill="#fff"
-          textAnchor="middle"
-          dominantBaseline="central"
-          data-pocket-label={seg.number}
-          transform={`rotate(${seg.labelAngle} ${seg.labelX} ${seg.labelY})`}
-        >
-          {seg.number}
-        </text>
-      ))}
-    </svg>
+      <svg
+        data-testid="roulette-wheel"
+        data-theme={theme}
+        viewBox="0 0 100 100"
+        className="absolute inset-0 w-full h-full"
+      >
+        {segments.map(seg => (
+          <path
+            key={seg.number}
+            d={seg.path}
+            fill={SEGMENT_FILL[seg.colour]}
+            stroke="#fbbf24"
+            strokeWidth={0.15}
+            data-pocket={seg.number}
+            data-colour={seg.colour}
+          />
+        ))}
+        {segments.map(seg => (
+          <text
+            key={`label-${seg.number}`}
+            x={seg.labelX}
+            y={seg.labelY}
+            fontSize={3}
+            fill="#fff"
+            textAnchor="middle"
+            dominantBaseline="central"
+            data-pocket-label={seg.number}
+            transform={`rotate(${seg.labelAngle} ${seg.labelX} ${seg.labelY})`}
+          >
+            {seg.number}
+          </text>
+        ))}
+      </svg>
+
+      <div
+        data-testid="roulette-rim"
+        className="absolute inset-0 rounded-full border-[1.2vh] border-theme-primary pointer-events-none shadow-[inset_0_0_30px_rgba(0,0,0,0.5)]"
+      />
+
+      <div
+        data-testid="roulette-cone"
+        data-pocket={resultNum ?? ''}
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[35%] h-[35%] rounded-full bg-theme-bg border-[0.5vh] border-theme-accent flex items-center justify-center text-[5vh] md:text-[6vh] font-bold text-theme-accent shadow-[0_0_20px_rgba(0,0,0,0.4)]"
+      >
+        {resultNum !== null ? resultNum : '—'}
+      </div>
+
+      <div
+        data-testid="roulette-pointer"
+        className="absolute top-[-1vh] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[1.5vh] border-r-[1.5vh] border-t-[2.5vh] border-l-transparent border-r-transparent border-t-theme-accent z-20 drop-shadow-md"
+      />
+    </div>
   );
 }
