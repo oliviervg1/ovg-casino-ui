@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { evaluateSlotsResult } from '../components/Games/gameLogic';
 import { soundEngine } from '../utils/SoundEngine';
 import type { ThemeType } from '../utils/themeManifesto';
+import type { ReelCells } from '../components/Games/Slots/SlotReel';
 
 export interface UseSlotsGameOptions {
   theme: ThemeType;
@@ -14,17 +15,19 @@ export interface UseSlotsGameOptions {
 export interface UseSlotsGameReturn {
   bet: number;
   setBet: (n: number) => void;
-  reels: string[];
+  reelStates: [ReelCells, ReelCells, ReelCells];
   spinning: boolean;
   win: 'jackpot' | 'small' | null;
   message: string | null;
   spin: () => void;
 }
 
+const emptyCells: ReelCells = { top: '', middle: '', bottom: '' };
+
 export function useSlotsGame(opts: UseSlotsGameOptions): UseSlotsGameReturn {
   const { theme, symbols, balance, onUpdateBalance } = opts;
   const [bet, setBet] = useState(10);
-  const [reels, setReels] = useState<string[]>(['', '', '']);
+  const [reelStates, setReelStates] = useState<[ReelCells, ReelCells, ReelCells]>([emptyCells, emptyCells, emptyCells]);
   const [spinning, setSpinning] = useState(false);
   const [win, setWin] = useState<'jackpot' | 'small' | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -42,16 +45,18 @@ export function useSlotsGame(opts: UseSlotsGameOptions): UseSlotsGameReturn {
     soundEngine.playSlotSpin(theme, 2000);
 
     const pick = () => symbolsRef.current[Math.floor(Math.random() * symbolsRef.current.length)];
+    const pickReel = (): ReelCells => ({ top: pick(), middle: pick(), bottom: pick() });
     let spins = 0;
     const interval = setInterval(() => {
-      setReels([pick(), pick(), pick()]);
+      setReelStates([pickReel(), pickReel(), pickReel()]);
       spins++;
       if (spins > 20) {
         clearInterval(interval);
-        const finalReels = [pick(), pick(), pick()];
-        setReels(finalReels);
+        const finalReels: [ReelCells, ReelCells, ReelCells] = [pickReel(), pickReel(), pickReel()];
+        setReelStates(finalReels);
 
-        const result = evaluateSlotsResult(finalReels);
+        const payline = finalReels.map(r => r.middle);
+        const result = evaluateSlotsResult(payline);
         if (result === 'jackpot') {
           const payout = bet * 50;
           onUpdateBalance?.(payout);
@@ -73,5 +78,5 @@ export function useSlotsGame(opts: UseSlotsGameOptions): UseSlotsGameReturn {
     }, 100);
   }, [bet, balance, theme, spinning, onUpdateBalance, symbols.length]);
 
-  return { bet, setBet, reels, spinning, win, message, spin };
+  return { bet, setBet, reelStates, spinning, win, message, spin };
 }

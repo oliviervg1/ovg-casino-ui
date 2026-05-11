@@ -40,5 +40,25 @@ describe('useSlotsGame', () => {
     act(() => { vi.advanceTimersByTime(21 * 100 + 50); });
     expect(result.current.spinning).toBe(false);
     expect(onUpdateBalance).toHaveBeenCalledWith(-10); // bet deducted at spin start
+    expect(result.current.reelStates[0].middle).not.toBe('');
+  });
+
+  it('exposes reelStates with {top, middle, bottom} per reel', () => {
+    const { result } = renderHook(() => useSlotsGame({ theme: 'sweets', symbols, balance: 100 }));
+    expect(result.current.reelStates).toHaveLength(3);
+    for (const r of result.current.reelStates) {
+      expect(r).toHaveProperty('top');
+      expect(r).toHaveProperty('middle');
+      expect(r).toHaveProperty('bottom');
+    }
+  });
+
+  it('after spin, middle row symbols are the payline (used by evaluateSlotsResult)', () => {
+    const { result } = renderHook(() => useSlotsGame({ theme: 'sweets', symbols, balance: 100 }));
+    act(() => { result.current.spin(); });
+    act(() => { vi.advanceTimersByTime(21 * 100 + 50); });
+    const payline = result.current.reelStates.map(r => r.middle);
+    // Symbols must come from the configured pool (no leakage of empty strings).
+    for (const sym of payline) expect(symbols).toContain(sym);
   });
 });
