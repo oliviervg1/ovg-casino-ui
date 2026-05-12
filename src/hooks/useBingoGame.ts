@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { evaluateBingoBoard } from '../components/Games/gameLogic';
 import { soundEngine } from '../utils/SoundEngine';
 import type { ThemeType } from '../utils/themeManifesto';
@@ -39,6 +39,14 @@ export function useBingoGame(opts: UseBingoGameOptions): UseBingoGameReturn {
   const [drawing, setDrawing] = useState(false);
   const [win, setWin] = useState<'jackpot' | 'small' | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => () => {
+    if (intervalRef.current !== null) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
 
   const play = useCallback(() => {
     if (drawing || balance < bet) return;
@@ -65,6 +73,7 @@ export function useBingoGame(opts: UseBingoGameOptions): UseBingoGameReturn {
       soundEngine.playBingoDraw(theme);
       if (drawCount >= MAX_DRAWS || evaluateBingoBoard(currentBoard, localDrawn)) {
         clearInterval(interval);
+        intervalRef.current = null;
         const won = evaluateBingoBoard(currentBoard, localDrawn);
         if (won) {
           const payout = bet * 5;
@@ -79,6 +88,7 @@ export function useBingoGame(opts: UseBingoGameOptions): UseBingoGameReturn {
         setDrawing(false);
       }
     }, DRAW_INTERVAL_MS);
+    intervalRef.current = interval;
   }, [drawing, balance, bet, theme, onUpdateBalance]);
 
   const lastDrawn = drawn.length > 0 ? drawn[drawn.length - 1] : null;

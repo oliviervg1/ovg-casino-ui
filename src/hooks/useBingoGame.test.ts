@@ -92,4 +92,15 @@ describe('useBingoGame', () => {
     expect(result.current.drawing).toBe(true);
     expect(result.current.drawn).toEqual([]);
   });
+
+  it('clears the draw interval on unmount so no timers remain', () => {
+    const { result, unmount } = renderHook(() =>
+      useBingoGame({ theme: 'sweets', balance: 100, onUpdateBalance: vi.fn() }),
+    );
+    act(() => { result.current.play(); });
+    expect(result.current.drawing).toBe(true);
+    expect(vi.getTimerCount()).toBe(1);
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
+  });
 });
