@@ -12,9 +12,11 @@ export interface SlotMachineProps {
 }
 
 export function SlotMachine({ theme, game, symbols }: SlotMachineProps) {
+  const winTier = game.win === 'loss' ? null : game.win;
+  const isWin = winTier !== null;
   return (
     <SlotChassis theme={theme}>
-      <PaylineStrip winning={game.win !== null} />
+      <PaylineStrip winning={isWin} />
       <div className="flex justify-center gap-[2vh] md:gap-[3vh] items-center relative">
         {game.reelStates.map((cells, i) => (
           <SlotReel
@@ -23,11 +25,11 @@ export function SlotMachine({ theme, game, symbols }: SlotMachineProps) {
             index={i}
             spinning={game.spinning}
             pool={symbols}
-            winning={game.win !== null}
+            winning={isWin}
           />
         ))}
       </div>
-      <BottomLedBar win={game.win} />
+      <BottomLedBar win={winTier} />
     </SlotChassis>
   );
 }

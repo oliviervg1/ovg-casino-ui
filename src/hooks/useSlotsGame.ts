@@ -17,7 +17,8 @@ export interface UseSlotsGameReturn {
   setBet: (n: number) => void;
   reelStates: [ReelCells, ReelCells, ReelCells];
   spinning: boolean;
-  win: 'jackpot' | 'small' | null;
+  win: 'jackpot' | 'small' | 'loss' | null;
+  lastPayout: number | null;
   message: string | null;
   spin: () => void;
 }
@@ -36,7 +37,8 @@ export function useSlotsGame(opts: UseSlotsGameOptions): UseSlotsGameReturn {
   const [bet, setBet] = useState(10);
   const [reelStates, setReelStates] = useState<[ReelCells, ReelCells, ReelCells]>([emptyCells, emptyCells, emptyCells]);
   const [spinning, setSpinning] = useState(false);
-  const [win, setWin] = useState<'jackpot' | 'small' | null>(null);
+  const [win, setWin] = useState<'jackpot' | 'small' | 'loss' | null>(null);
+  const [lastPayout, setLastPayout] = useState<number | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   // Keep the latest props readable from inside setInterval without re-creating the spin closure.
@@ -73,6 +75,7 @@ export function useSlotsGame(opts: UseSlotsGameOptions): UseSlotsGameReturn {
     if (spinning || balance < bet || symbols.length === 0) return;
     setSpinning(true);
     setWin(null);
+    setLastPayout(null);
     setMessage(null);
     onUpdateBalance?.(-bet);
     soundEngine.playSlotSpin(theme, SETTLE_MS);
@@ -98,15 +101,19 @@ export function useSlotsGame(opts: UseSlotsGameOptions): UseSlotsGameReturn {
         const payout = bet * 50;
         onUpdateBalance?.(payout);
         setWin('jackpot');
+        setLastPayout(payout);
         setMessage(`JACKPOT! +${payout}`);
         soundEngine.playWin(theme);
       } else if (result === 'small') {
         const payout = bet * 3;
         onUpdateBalance?.(payout);
         setWin('small');
+        setLastPayout(payout);
         setMessage(`Small win: +${payout}`);
         soundEngine.playWin(theme);
       } else {
+        setWin('loss');
+        setLastPayout(0);
         setMessage('No match. Try again.');
         soundEngine.playLose(theme);
       }
@@ -117,5 +124,5 @@ export function useSlotsGame(opts: UseSlotsGameOptions): UseSlotsGameReturn {
     // the interval + timeout always reach completion within SETTLE_MS and clean themselves up.
   }, [bet, balance, theme, spinning, onUpdateBalance, symbols.length]);
 
-  return { bet, setBet, reelStates, spinning, win, message, spin };
+  return { bet, setBet, reelStates, spinning, win, lastPayout, message, spin };
 }

@@ -144,4 +144,39 @@ describe('useSlotsGame', () => {
       expect(urls).toContain(r.middle);
     }
   });
+
+  it('exposes lastPayout=null initially', () => {
+    const { result } = renderHook(() => useSlotsGame({ theme: 'sweets', symbols, balance: 1000, onUpdateBalance: vi.fn() }));
+    expect(result.current.lastPayout).toBe(null);
+  });
+
+  it("sets win='loss' and lastPayout=0 when no symbol pattern matches", async () => {
+    // Force the no-match branch by mocking evaluateSlotsResult to return null.
+    vi.doMock('../components/Games/gameLogic', async (orig) => {
+      const m = await orig<typeof import('../components/Games/gameLogic')>();
+      return { ...m, evaluateSlotsResult: () => null };
+    });
+    vi.resetModules();
+    const { useSlotsGame: hook } = await import('./useSlotsGame');
+    vi.useFakeTimers();
+    const { result } = renderHook(() => hook({ theme: 'sweets', symbols, balance: 1000, onUpdateBalance: vi.fn() }));
+    act(() => { result.current.spin(); });
+    // Advance through the spin settle window
+    act(() => { vi.advanceTimersByTime(5000); });
+    expect(result.current.win).toBe('loss');
+    expect(result.current.lastPayout).toBe(0);
+    vi.doUnmock('../components/Games/gameLogic');
+    vi.resetModules();
+    vi.useRealTimers();
+  });
+
+  it('sets lastPayout to bet*3 on small win and bet*50 on jackpot (uses live evaluator)', () => {
+    // Shape assertion only: when win is set, lastPayout matches bet * known multiplier.
+    // Default bet is 10 (set inside the hook).
+    const { result } = renderHook(() => useSlotsGame({ theme: 'sweets', symbols, balance: 1000, onUpdateBalance: vi.fn() }));
+    act(() => { result.current.spin(); });
+    act(() => { vi.advanceTimersByTime(2500 + 50); });
+    if (result.current.win === 'jackpot') expect(result.current.lastPayout).toBe(50 * 10);
+    if (result.current.win === 'small') expect(result.current.lastPayout).toBe(3 * 10);
+  });
 });

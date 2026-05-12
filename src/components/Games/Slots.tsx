@@ -45,6 +45,7 @@ export function Slots({ name, theme, balance, onUpdateBalance, onBack }: Props) 
       extraAssetKeys={extraAssetKeys}
       gameType="slots"
       win={game.win}
+      lastPayout={game.lastPayout}
       bet={game.bet}
       onBet={game.setBet}
       onPlay={game.spin}

@@ -13,6 +13,7 @@ const baseGame: UseSlotsGameReturn = {
   ],
   spinning: false,
   win: null,
+  lastPayout: null,
   message: null,
   spin: () => {},
 };
