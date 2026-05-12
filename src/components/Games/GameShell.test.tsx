@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import type { ComponentProps } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import type { GameShellProps } from './GameShell';
 
@@ -8,6 +8,15 @@ vi.mock('../../hooks/useMusic', () => ({ useMusic: () => ({ musicUrl: 'https://x
 
 import { GameShell } from './GameShell';
 import { AudioControlsProvider } from '../../contexts/AudioControlsContext';
+import { CelebrationProvider } from '../../contexts/CelebrationContext';
+
+function Providers({ children }: { children: ReactNode }) {
+  return (
+    <AudioControlsProvider>
+      <CelebrationProvider>{children}</CelebrationProvider>
+    </AudioControlsProvider>
+  );
+}
 
 describe('GameShell', () => {
   const baseProps = {
@@ -17,6 +26,7 @@ describe('GameShell', () => {
     extraAssetKeys: [] as string[],
     gameType: 'roulette' as const,
     win: null,
+    lastPayout: null,
     bet: 10,
     onBet: vi.fn(),
     onPlay: vi.fn(),
@@ -30,19 +40,19 @@ describe('GameShell', () => {
   const renderShell = (overrides: Partial<ComponentProps<typeof GameShell>> = {}) => {
     document.documentElement.setAttribute('data-theme', 'sweets');
     return render(
-      <AudioControlsProvider>
+      <Providers>
         <GameShell {...baseProps} {...overrides}>
           <div data-testid="game-body" />
         </GameShell>
-      </AudioControlsProvider>
+      </Providers>
     );
   };
 
   it('renders children', () => {
     render(
-      <AudioControlsProvider>
+      <Providers>
         <GameShell {...baseProps}><div data-testid="surface">wheel</div></GameShell>
-      </AudioControlsProvider>
+      </Providers>
     );
     expect(screen.getByTestId('surface')).toBeTruthy();
   });
@@ -50,9 +60,9 @@ describe('GameShell', () => {
   it('calls onPlay when the play button is clicked', () => {
     const onPlay = vi.fn();
     render(
-      <AudioControlsProvider>
+      <Providers>
         <GameShell {...baseProps} onPlay={onPlay}><div /></GameShell>
-      </AudioControlsProvider>
+      </Providers>
     );
     fireEvent.click(screen.getByText('SPIN'));
     expect(onPlay).toHaveBeenCalledOnce();
@@ -60,9 +70,9 @@ describe('GameShell', () => {
 
   it('disables the play button when playDisabled is true', () => {
     render(
-      <AudioControlsProvider>
+      <Providers>
         <GameShell {...baseProps} playDisabled><div /></GameShell>
-      </AudioControlsProvider>
+      </Providers>
     );
     const btn = screen.getByText('SPIN').closest('button')!;
     expect(btn.disabled).toBe(true);
@@ -73,9 +83,12 @@ describe('GameShell', () => {
     vi.resetModules();
     const { GameShell: Shell2 } = await import('./GameShell');
     const { AudioControlsProvider: Provider2 } = await import('../../contexts/AudioControlsContext');
+    const { CelebrationProvider: CProvider2 } = await import('../../contexts/CelebrationContext');
     render(
       <Provider2>
-        <Shell2 {...baseProps}><div /></Shell2>
+        <CProvider2>
+          <Shell2 {...baseProps}><div /></Shell2>
+        </CProvider2>
       </Provider2>
     );
     expect(screen.getByText(/generating unique/i)).toBeTruthy();
@@ -106,12 +119,61 @@ describe('GameShellProps typing', () => {
     expect(_props.win).toBe('loss');
   });
 
-  it('accepts lastPayout: number | null | undefined', () => {
+  it('accepts lastPayout: number | null', () => {
     const a: Pick<GameShellProps, 'lastPayout'> = { lastPayout: 100 };
     const b: Pick<GameShellProps, 'lastPayout'> = { lastPayout: null };
-    const c: Pick<GameShellProps, 'lastPayout'> = {};
     expect(a.lastPayout).toBe(100);
     expect(b.lastPayout).toBe(null);
-    expect(c.lastPayout).toBeUndefined();
+  });
+});
+
+describe('GameShell celebration integration', () => {
+  const baseProps: GameShellProps = {
+    name: 'Test', theme: 'sweets', bgKey: 'bg_test',
+    extraAssetKeys: [], gameType: 'slots',
+    win: null, lastPayout: null,
+    bet: 10, onBet: () => {}, onPlay: () => {}, playLabel: 'PLAY',
+    playDisabled: false, message: null, balance: 1000,
+    onBack: () => {},
+    children: <div>game</div>,
+  };
+
+  function withProvider(ui: ReactNode) {
+    return (
+      <AudioControlsProvider>
+        <CelebrationProvider>{ui}</CelebrationProvider>
+      </AudioControlsProvider>
+    );
+  }
+
+  it('the message line carries aria-live="polite" role="status"', () => {
+    const { container } = render(withProvider(
+      <GameShell {...baseProps} message="Hello">
+        <div>game</div>
+      </GameShell>
+    ));
+    const live = container.querySelector('p[aria-live="polite"]');
+    expect(live).toBeTruthy();
+    expect(live!.getAttribute('role')).toBe('status');
+    expect(live!.textContent).toBe('Hello');
+  });
+
+  it('does NOT render an inline JACKPOT! div directly (handled by ThemedCelebration)', () => {
+    const { container } = render(withProvider(
+      <GameShell {...baseProps} win="jackpot" lastPayout={500} message="JACKPOT! +500">
+        <div>game</div>
+      </GameShell>
+    ));
+    expect(container.textContent).toContain('CANDY JACKPOT!');
+    expect(container.querySelector('.text-7xl.font-casino')).toBe(null);
+  });
+
+  it('renders ThemedCelebration LossPlate for win=loss', () => {
+    const { container } = render(withProvider(
+      <GameShell {...baseProps} win="loss" lastPayout={0} message="No match. Try again.">
+        <div>game</div>
+      </GameShell>
+    ));
+    expect(container.textContent).toContain('Empty wrapper.');
   });
 });

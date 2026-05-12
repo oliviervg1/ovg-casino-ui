@@ -2,6 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import { AudioControlsProvider } from '../../contexts/AudioControlsContext';
+import { CelebrationProvider } from '../../contexts/CelebrationContext';
 import { Bingo } from './Bingo';
 
 vi.mock('../../utils/SoundEngine', () => ({
@@ -23,14 +24,16 @@ vi.mock('../../hooks/useMusic', () => ({ useMusic: () => ({ musicUrl: null, load
 const renderBingo = (overrides: Partial<React.ComponentProps<typeof Bingo>> = {}) =>
   render(
     <AudioControlsProvider>
-      <Bingo
-        name="Sweet Bingo"
-        theme="sweets"
-        balance={100}
-        onUpdateBalance={vi.fn()}
-        onBack={vi.fn()}
-        {...overrides}
-      />
+      <CelebrationProvider>
+        <Bingo
+          name="Sweet Bingo"
+          theme="sweets"
+          balance={100}
+          onUpdateBalance={vi.fn()}
+          onBack={vi.fn()}
+          {...overrides}
+        />
+      </CelebrationProvider>
     </AudioControlsProvider>,
   );
 

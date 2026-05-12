@@ -2,6 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { AudioControlsProvider } from '../../contexts/AudioControlsContext';
+import { CelebrationProvider } from '../../contexts/CelebrationContext';
 import { Roulette } from './Roulette';
 
 vi.mock('../../utils/SoundEngine', () => ({
@@ -18,14 +19,16 @@ vi.mock('../../hooks/useMusic', () => ({ useMusic: () => ({ musicUrl: null, load
 const renderRoulette = (overrides: Partial<React.ComponentProps<typeof Roulette>> = {}) =>
   render(
     <AudioControlsProvider>
-      <Roulette
-        name="Sweet Spin"
-        theme="sweets"
-        balance={100}
-        onUpdateBalance={vi.fn()}
-        onBack={vi.fn()}
-        {...overrides}
-      />
+      <CelebrationProvider>
+        <Roulette
+          name="Sweet Spin"
+          theme="sweets"
+          balance={100}
+          onUpdateBalance={vi.fn()}
+          onBack={vi.fn()}
+          {...overrides}
+        />
+      </CelebrationProvider>
     </AudioControlsProvider>
   );
 

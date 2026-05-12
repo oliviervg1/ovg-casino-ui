@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import { AudioControlsProvider } from '../../contexts/AudioControlsContext';
+import { CelebrationProvider } from '../../contexts/CelebrationContext';
 import { Slots } from './Slots';
 
 vi.mock('../../utils/SoundEngine', () => ({
@@ -24,14 +25,16 @@ vi.mock('../../hooks/useMusic', () => ({ useMusic: () => ({ musicUrl: null, load
 const renderSlots = (overrides: Partial<React.ComponentProps<typeof Slots>> = {}) =>
   render(
     <AudioControlsProvider>
-      <Slots
-        name="Sweet Line"
-        theme="sweets"
-        balance={100}
-        onUpdateBalance={vi.fn()}
-        onBack={vi.fn()}
-        {...overrides}
-      />
+      <CelebrationProvider>
+        <Slots
+          name="Sweet Line"
+          theme="sweets"
+          balance={100}
+          onUpdateBalance={vi.fn()}
+          onBack={vi.fn()}
+          {...overrides}
+        />
+      </CelebrationProvider>
     </AudioControlsProvider>
   );
 
