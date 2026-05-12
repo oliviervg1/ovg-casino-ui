@@ -57,6 +57,12 @@ describe('server bootstrap', () => {
     expect(csp).toMatch(/connect-src[^;]*ces-token-broker-y4zvagwaqa-uc\.a\.run\.app/);
     expect(csp).toMatch(/script-src[^;]*www\.gstatic\.com/);
     expect(csp).toMatch(/script-src[^;]*apis\.google\.com/);
+    // CES Messenger's audio-recording path serializes its AudioWorklet
+    // processor into a Blob and loads it via audioContext.audioWorklet
+    // .addModule(blob:URL). Chrome checks script-src for that fetch (no
+    // worker-src is set so it falls back), so blob: must be allowlisted
+    // or the worklet load aborts and voice chat fails to start.
+    expect(csp).toMatch(/script-src[^;]*blob:/);
     expect(csp).toMatch(/style-src[^;]*fonts\.googleapis\.com/);
     expect(csp).toMatch(/font-src[^;]*fonts\.gstatic\.com/);
     expect(csp).toMatch(/frame-ancestors\s+'none'/);

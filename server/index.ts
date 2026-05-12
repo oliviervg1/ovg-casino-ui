@@ -52,7 +52,11 @@ export function createApp(): Express {
         // Firebase signInWithPopup dynamically injects https://apis.google.com/js/api.js
         // (the gapi loader) before opening the OAuth popup; the popup window itself is
         // not subject to our CSP and the hidden auth iframe is covered by frame-src.
-        scriptSrc: ["'self'", 'https://www.gstatic.com', 'https://cdn.jsdelivr.net', 'https://apis.google.com'],
+        // blob: covers CES Messenger's AudioWorklet — its voice-chat path serializes
+        // the worklet processor into a Blob and loads it via addModule(blob:URL),
+        // which Chrome checks against script-src (no worker-src defined → falls back).
+        // Same-origin Blob URLs only — page-created, not externally loadable.
+        scriptSrc: ["'self'", 'https://www.gstatic.com', 'https://cdn.jsdelivr.net', 'https://apis.google.com', 'blob:'],
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
         objectSrc: ["'none'"],
