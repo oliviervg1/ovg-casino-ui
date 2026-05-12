@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { AudioControlsProvider, useAudioControls } from '../../contexts/AudioControlsContext';
+import { CelebrationProvider } from '../../contexts/CelebrationContext';
 import { AppHeader } from './AppHeader';
 import type { UserProfile } from '../../hooks/useUser';
 
@@ -29,10 +30,12 @@ function renderAt(path: string, withMusic = false) {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <AudioControlsProvider>
-        {withMusic && <NowPlayingSetter />}
-        <Routes>
-          <Route path="*" element={<AppHeader profile={profile} onLogout={() => {}} />} />
-        </Routes>
+        <CelebrationProvider>
+          {withMusic && <NowPlayingSetter />}
+          <Routes>
+            <Route path="*" element={<AppHeader profile={profile} onLogout={() => {}} />} />
+          </Routes>
+        </CelebrationProvider>
       </AudioControlsProvider>
     </MemoryRouter>
   );

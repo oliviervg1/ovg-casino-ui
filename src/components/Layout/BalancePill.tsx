@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMotion } from '../../hooks/useMotion';
+import { useCelebration } from '../../contexts/CelebrationContext';
 
 interface BalancePillProps {
   balance: number;
@@ -11,6 +12,7 @@ function format(n: number): string {
 
 export function BalancePill({ balance }: BalancePillProps) {
   const motion = useMotion();
+  const { pendingTick } = useCelebration();
   const [displayed, setDisplayed] = useState<number>(balance);
   const previousRef = useRef<number>(balance);
 
@@ -22,7 +24,7 @@ export function BalancePill({ balance }: BalancePillProps) {
       return;
     }
     const start = performance.now();
-    const duration = motion.durations.slow;
+    const duration = pendingTick?.durationMs ?? motion.durations.slow;
     let raf = 0;
     const tick = (now: number) => {
       const t = Math.min(1, (now - start) / duration);
@@ -33,7 +35,7 @@ export function BalancePill({ balance }: BalancePillProps) {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [balance, motion.shouldAnimate, motion.durations.slow]);
+  }, [balance, motion.shouldAnimate, motion.durations.slow, pendingTick?.durationMs]);
 
   return (
     <div

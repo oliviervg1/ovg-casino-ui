@@ -22,6 +22,7 @@ import { THEME_NAMES, type ThemeType } from './utils/themeManifesto';
 import { WorldPage } from './components/WorldPage';
 import { AppHeader } from './components/Layout/AppHeader';
 import { AudioControlsProvider } from './contexts/AudioControlsContext';
+import { CelebrationProvider } from './contexts/CelebrationContext';
 
 export type { ThemeType } from './utils/themeManifesto';
 export type GameType = string;
@@ -181,6 +182,7 @@ function AppContent() {
 
   return (
     <AudioControlsProvider>
+      <CelebrationProvider>
       <div className="h-screen flex flex-col transition-colors duration-500 overflow-hidden">
         {bgLoading && (
         <div className="fixed inset-0 z-0 flex items-center justify-center bg-black/50 backdrop-blur-sm pointer-events-none transition-opacity duration-500">
@@ -229,6 +231,7 @@ function AppContent() {
         </AnimatePresence>
         </main>
       </div>
+      </CelebrationProvider>
     </AudioControlsProvider>
   );
 }
