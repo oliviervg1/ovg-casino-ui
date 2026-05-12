@@ -18,4 +18,15 @@ describe('themeManifesto', () => {
       }
     }
   });
+
+  describe('wiggle', () => {
+    it('every theme has a wiggle with positive duration_ms and magnitude_px', () => {
+      for (const theme of THEME_NAMES) {
+        const w = themeManifesto[theme].wiggle;
+        expect(w).toBeTruthy();
+        expect(w.duration_ms).toBeGreaterThan(0);
+        expect(w.magnitude_px).toBeGreaterThan(0);
+      }
+    });
+  });
 });

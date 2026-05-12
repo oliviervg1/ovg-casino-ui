@@ -17,6 +17,8 @@ export type CelebrationVariant = 'candy-burst' | 'sandstorm-gold' | 'supernova' 
 export type SkeletonVariant = 'unwrap' | 'hieroglyph-fade' | 'hyperspace-streak' | 'wagon-wheel' | 'sonar-ripple' | 'vine-grow' | 'candle-flicker' | 'ink-bleed';
 export type AudioClickVariant = 'candy-crinkle' | 'parchment-rustle' | 'laser-blip' | 'spur-jingle' | 'bubble-pop' | 'wood-knock' | 'velvet-tap' | 'sword-tap';
 
+export interface Wiggle { duration_ms: number; magnitude_px: number; }
+
 export interface Manifesto {
   /** Display name shown in lobby world cards, game titles, etc. */
   displayName: string;
@@ -29,15 +31,16 @@ export interface Manifesto {
   celebration: CelebrationVariant;
   skeleton: SkeletonVariant;
   audioClick: AudioClickVariant;
+  wiggle: Wiggle;
 }
 
 export const themeManifesto: Record<ThemeType, Manifesto> = {
-  sweets: { displayName: 'Sweets', font: 'font-sweets', surface: 'pillowy-glass', button: 'gummy-3d', border: 'candy-wrapper', motionIdle: 'jiggle', celebration: 'candy-burst', skeleton: 'unwrap', audioClick: 'candy-crinkle' },
-  egypt: { displayName: 'Egypt', font: 'font-egypt font-bold', surface: 'parchment', button: 'scarab-cartouche', border: 'gold-leaf', motionIdle: 'pulse', celebration: 'sandstorm-gold', skeleton: 'hieroglyph-fade', audioClick: 'parchment-rustle' },
-  space: { displayName: 'Space', font: 'font-space font-bold', surface: 'holographic', button: 'neon-rim', border: 'neon-line', motionIdle: 'pulse', celebration: 'supernova', skeleton: 'hyperspace-streak', audioClick: 'laser-blip' },
-  west: { displayName: 'Wild West', font: 'font-west', surface: 'wood-iron', button: 'branded-leather', border: 'rope-iron', motionIdle: 'sway', celebration: 'dust-storm', skeleton: 'wagon-wheel', audioClick: 'spur-jingle' },
-  ocean: { displayName: 'Ocean', font: 'font-ocean', surface: 'coral', button: 'bubble', border: 'kelp-frame', motionIdle: 'drift', celebration: 'bioluminescent-burst', skeleton: 'sonar-ripple', audioClick: 'bubble-pop' },
-  jungle: { displayName: 'Jungle', font: 'font-jungle tracking-wider', surface: 'mossy-stone', button: 'vine-wrap', border: 'vine', motionIdle: 'sway', celebration: 'parrot-flock', skeleton: 'vine-grow', audioClick: 'wood-knock' },
-  vampire: { displayName: 'Vampire', font: 'font-vampire tracking-wider', surface: 'black-marble', button: 'velvet-pill', border: 'gothic-arch', motionIdle: 'flicker', celebration: 'bat-swarm', skeleton: 'candle-flicker', audioClick: 'velvet-tap' },
-  ninja: { displayName: 'Ninja', font: 'font-ninja', surface: 'dark-wood-paper', button: 'seal-stamp', border: 'ink-brush', motionIdle: 'drift', celebration: 'cherry-blossom-storm', skeleton: 'ink-bleed', audioClick: 'sword-tap' },
+  sweets: { displayName: 'Sweets', font: 'font-sweets', surface: 'pillowy-glass', button: 'gummy-3d', border: 'candy-wrapper', motionIdle: 'jiggle', celebration: 'candy-burst', skeleton: 'unwrap', audioClick: 'candy-crinkle', wiggle: { duration_ms: 300, magnitude_px: 4 } },
+  egypt: { displayName: 'Egypt', font: 'font-egypt font-bold', surface: 'parchment', button: 'scarab-cartouche', border: 'gold-leaf', motionIdle: 'pulse', celebration: 'sandstorm-gold', skeleton: 'hieroglyph-fade', audioClick: 'parchment-rustle', wiggle: { duration_ms: 250, magnitude_px: 3 } },
+  space: { displayName: 'Space', font: 'font-space font-bold', surface: 'holographic', button: 'neon-rim', border: 'neon-line', motionIdle: 'pulse', celebration: 'supernova', skeleton: 'hyperspace-streak', audioClick: 'laser-blip', wiggle: { duration_ms: 200, magnitude_px: 4 } },
+  west: { displayName: 'Wild West', font: 'font-west', surface: 'wood-iron', button: 'branded-leather', border: 'rope-iron', motionIdle: 'sway', celebration: 'dust-storm', skeleton: 'wagon-wheel', audioClick: 'spur-jingle', wiggle: { duration_ms: 350, magnitude_px: 5 } },
+  ocean: { displayName: 'Ocean', font: 'font-ocean', surface: 'coral', button: 'bubble', border: 'kelp-frame', motionIdle: 'drift', celebration: 'bioluminescent-burst', skeleton: 'sonar-ripple', audioClick: 'bubble-pop', wiggle: { duration_ms: 400, magnitude_px: 3 } },
+  jungle: { displayName: 'Jungle', font: 'font-jungle tracking-wider', surface: 'mossy-stone', button: 'vine-wrap', border: 'vine', motionIdle: 'sway', celebration: 'parrot-flock', skeleton: 'vine-grow', audioClick: 'wood-knock', wiggle: { duration_ms: 300, magnitude_px: 4 } },
+  vampire: { displayName: 'Vampire', font: 'font-vampire tracking-wider', surface: 'black-marble', button: 'velvet-pill', border: 'gothic-arch', motionIdle: 'flicker', celebration: 'bat-swarm', skeleton: 'candle-flicker', audioClick: 'velvet-tap', wiggle: { duration_ms: 400, magnitude_px: 6 } },
+  ninja: { displayName: 'Ninja', font: 'font-ninja', surface: 'dark-wood-paper', button: 'seal-stamp', border: 'ink-brush', motionIdle: 'drift', celebration: 'cherry-blossom-storm', skeleton: 'ink-bleed', audioClick: 'sword-tap', wiggle: { duration_ms: 150, magnitude_px: 5 } },
 };

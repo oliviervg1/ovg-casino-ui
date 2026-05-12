@@ -166,3 +166,14 @@ ces-messenger {
   right: auto !important;
   left: 1.25rem !important;
 }
+
+@keyframes wiggle-shake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(calc(var(--wiggle-magnitude, 4px) * -1)); }
+  40%      { transform: translateX(var(--wiggle-magnitude, 4px)); }
+  60%      { transform: translateX(calc(var(--wiggle-magnitude, 4px) * -1)); }
+  80%      { transform: translateX(var(--wiggle-magnitude, 4px)); }
+}
+.wiggle-active {
+  animation: wiggle-shake var(--wiggle-duration, 300ms) ease-in-out;
+}
