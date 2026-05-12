@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { ComponentProps } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
+import type { GameShellProps } from './GameShell';
 
 vi.mock('../../hooks/useAssets', () => ({ useAssets: () => ({ assets: { bg_test: 'https://x/bg' }, loading: false }) }));
 vi.mock('../../hooks/useMusic', () => ({ useMusic: () => ({ musicUrl: 'https://x/m', loading: false }) }));
@@ -96,5 +97,21 @@ describe('GameShell', () => {
   it('does not render the legacy back-to-lobby button (lives in AppHeader now)', () => {
     renderShell();
     expect(screen.queryByRole('button', { name: /back to lobby/i })).toBeNull();
+  });
+});
+
+describe('GameShellProps typing', () => {
+  it("accepts 'loss' in the win prop union", () => {
+    const _props: Pick<GameShellProps, 'win'> = { win: 'loss' };
+    expect(_props.win).toBe('loss');
+  });
+
+  it('accepts lastPayout: number | null | undefined', () => {
+    const a: Pick<GameShellProps, 'lastPayout'> = { lastPayout: 100 };
+    const b: Pick<GameShellProps, 'lastPayout'> = { lastPayout: null };
+    const c: Pick<GameShellProps, 'lastPayout'> = {};
+    expect(a.lastPayout).toBe(100);
+    expect(b.lastPayout).toBe(null);
+    expect(c.lastPayout).toBeUndefined();
   });
 });

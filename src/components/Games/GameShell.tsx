@@ -16,7 +16,8 @@ export interface GameShellProps {
   bgKey: string;
   extraAssetKeys: string[];
   gameType: 'roulette' | 'slots' | 'bingo';
-  win: 'jackpot' | 'small' | null;
+  win: 'jackpot' | 'small' | 'loss' | null;
+  lastPayout?: number | null;
   bet: number;
   onBet: (n: number) => void;
   onPlay: () => void;
