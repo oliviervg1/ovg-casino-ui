@@ -22,6 +22,7 @@ export function Bingo({ name, theme, balance, onUpdateBalance, onBack }: Props) 
       extraAssetKeys={[`bingo_${theme}`]}
       gameType="bingo"
       win={game.win}
+      lastPayout={game.lastPayout}
       bet={game.bet}
       onBet={game.setBet}
       onPlay={game.play}

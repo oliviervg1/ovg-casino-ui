@@ -10,6 +10,7 @@ const baseGame: UseBingoGameReturn = {
   drawn: [],
   drawing: false,
   win: null,
+  lastPayout: null,
   message: null,
   lastDrawn: null,
   play: () => {},

@@ -103,4 +103,41 @@ describe('useBingoGame', () => {
     unmount();
     expect(vi.getTimerCount()).toBe(0);
   });
+
+  it('exposes lastPayout=null initially', () => {
+    const { result } = renderHook(() => useBingoGame({ theme: 'sweets', balance: 1000, onUpdateBalance: vi.fn() }));
+    expect(result.current.lastPayout).toBe(null);
+  });
+
+  it("sets win='loss' and lastPayout=0 when the board does not bingo within MAX_DRAWS", async () => {
+    vi.doMock('../components/Games/gameLogic', async (orig) => {
+      const m = await orig<typeof import('../components/Games/gameLogic')>();
+      return { ...m, evaluateBingoBoard: () => false };
+    });
+    vi.resetModules();
+    const { useBingoGame: hook, MAX_DRAWS, DRAW_INTERVAL_MS } = await import('./useBingoGame');
+    const { result } = renderHook(() => hook({ theme: 'sweets', balance: 1000, onUpdateBalance: vi.fn() }));
+    act(() => { result.current.play(); });
+    act(() => { vi.advanceTimersByTime(DRAW_INTERVAL_MS * (MAX_DRAWS + 2)); });
+    expect(result.current.win).toBe('loss');
+    expect(result.current.lastPayout).toBe(0);
+    vi.doUnmock('../components/Games/gameLogic');
+    vi.resetModules();
+  });
+
+  it("sets win='small' and lastPayout=bet*5 on a winning board", async () => {
+    vi.doMock('../components/Games/gameLogic', async (orig) => {
+      const m = await orig<typeof import('../components/Games/gameLogic')>();
+      return { ...m, evaluateBingoBoard: () => true };
+    });
+    vi.resetModules();
+    const { useBingoGame: hook, DRAW_INTERVAL_MS } = await import('./useBingoGame');
+    const { result } = renderHook(() => hook({ theme: 'sweets', balance: 1000, onUpdateBalance: vi.fn() }));
+    act(() => { result.current.play(); });
+    act(() => { vi.advanceTimersByTime(DRAW_INTERVAL_MS); });
+    expect(result.current.win).toBe('small');
+    expect(result.current.lastPayout).toBe(50);
+    vi.doUnmock('../components/Games/gameLogic');
+    vi.resetModules();
+  });
 });

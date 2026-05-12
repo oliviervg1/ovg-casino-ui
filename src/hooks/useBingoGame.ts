@@ -24,7 +24,8 @@ export interface UseBingoGameReturn {
   board: number[][];
   drawn: number[];
   drawing: boolean;
-  win: 'jackpot' | 'small' | null;
+  win: 'jackpot' | 'small' | 'loss' | null;
+  lastPayout: number | null;
   message: string | null;
   /** drawn[drawn.length - 1] when drawn is non-empty; null otherwise. */
   lastDrawn: number | null;
@@ -37,7 +38,8 @@ export function useBingoGame(opts: UseBingoGameOptions): UseBingoGameReturn {
   const [board, setBoard] = useState<number[][]>(() => makeBoard());
   const [drawn, setDrawn] = useState<number[]>([]);
   const [drawing, setDrawing] = useState(false);
-  const [win, setWin] = useState<'jackpot' | 'small' | null>(null);
+  const [win, setWin] = useState<'jackpot' | 'small' | 'loss' | null>(null);
+  const [lastPayout, setLastPayout] = useState<number | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -52,6 +54,7 @@ export function useBingoGame(opts: UseBingoGameOptions): UseBingoGameReturn {
     if (drawing || balance < bet) return;
     setDrawing(true);
     setWin(null);
+    setLastPayout(null);
     setMessage(null);
     setDrawn([]);
     // Capture the freshly-made board in a local so the setInterval closure evaluates
@@ -79,9 +82,12 @@ export function useBingoGame(opts: UseBingoGameOptions): UseBingoGameReturn {
           const payout = bet * 5;
           onUpdateBalance?.(payout);
           setWin('small');
+          setLastPayout(payout);
           setMessage(`Bingo! +${payout}`);
           soundEngine.playWin(theme);
         } else {
+          setWin('loss');
+          setLastPayout(0);
           setMessage('No bingo this round.');
           soundEngine.playLose(theme);
         }
@@ -98,7 +104,7 @@ export function useBingoGame(opts: UseBingoGameOptions): UseBingoGameReturn {
     board,
     drawn,
     drawing,
-    win, message,
+    win, lastPayout, message,
     lastDrawn,
     play,
   };
