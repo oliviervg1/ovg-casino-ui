@@ -51,6 +51,10 @@ describe('server bootstrap', () => {
     expect(csp).toMatch(/img-src[^;]*lh3\.googleusercontent\.com/);
     expect(csp).toMatch(/media-src[^;]*storage\.googleapis\.com/);
     expect(csp).toMatch(/connect-src[^;]*\*\.googleapis\.com/);
+    // CES Messenger fetches an impersonated token from a Cloud Run broker
+    // before opening any chat session; the URL must be in connect-src or the
+    // browser blocks the fetch and the widget never initialises.
+    expect(csp).toMatch(/connect-src[^;]*ces-token-broker-y4zvagwaqa-uc\.a\.run\.app/);
     expect(csp).toMatch(/script-src[^;]*www\.gstatic\.com/);
     expect(csp).toMatch(/script-src[^;]*apis\.google\.com/);
     expect(csp).toMatch(/style-src[^;]*fonts\.googleapis\.com/);

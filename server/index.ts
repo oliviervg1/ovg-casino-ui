@@ -38,7 +38,11 @@ export function createApp(): Express {
         mediaSrc: ["'self'", 'https://storage.googleapis.com'],
         // Firebase Auth + Firestore + identity toolkit. Wildcards cover
         // the various REST endpoints under googleapis.com / firebaseapp.com.
-        connectSrc: ["'self'", 'https://*.googleapis.com', 'https://*.firebaseapp.com', 'https://identitytoolkit.googleapis.com'],
+        // The CES Messenger fetches an impersonated token from a project-
+        // specific Cloud Run broker before each chat session — the URL is
+        // stable per deployment, so it's hardcoded alongside the gstatic
+        // and jsdelivr CES origins below rather than env-plumbed.
+        connectSrc: ["'self'", 'https://*.googleapis.com', 'https://*.firebaseapp.com', 'https://identitytoolkit.googleapis.com', 'https://ces-token-broker-y4zvagwaqa-uc.a.run.app'],
         // Firebase popup login renders an iframe under firebaseapp.com.
         frameSrc: ["'self'", 'https://*.firebaseapp.com'],
         // CES Messenger when enabled — gstatic for the widget, jsdelivr for handlebars.
