@@ -10,6 +10,7 @@ export interface RouletteSurfaceProps {
 }
 
 export function RouletteSurface({ theme, game }: RouletteSurfaceProps) {
+  const wheelWin = game.win === 'loss' ? null : game.win;
   return (
     <div data-testid="roulette-surface" className="flex flex-col items-center gap-4 md:gap-6">
       <div className="relative flex items-center justify-center">
@@ -19,7 +20,7 @@ export function RouletteSurface({ theme, game }: RouletteSurfaceProps) {
           resultNum={game.resultNum}
           wheelRotation={game.wheelRotation}
           ballRotation={game.ballRotation}
-          win={game.win}
+          win={wheelWin}
         />
       </div>
       <BetTable

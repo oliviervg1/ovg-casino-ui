@@ -12,6 +12,7 @@ const baseGame: UseRouletteGameReturn = {
   resultNum: null,
   resultColour: null,
   win: null,
+  lastPayout: null,
   message: null,
   wheelRotation: 0,
   ballRotation: 0,

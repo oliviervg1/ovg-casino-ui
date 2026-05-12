@@ -22,7 +22,8 @@ export interface UseRouletteGameReturn {
   /** Result pocket. null while spinning AND before any spin. Set at the end of each spin. */
   resultNum: number | null;
   resultColour: RouletteColour | null;
-  win: 'jackpot' | 'small' | null;
+  win: 'jackpot' | 'small' | 'loss' | null;
+  lastPayout: number | null;
   message: string | null;
   /** Cumulative wheel rotation (degrees, clockwise). Updates AT spin start so the wheel
    *  has a known target to decelerate into during the 2.5s spin window. */
@@ -40,7 +41,8 @@ export function useRouletteGame(opts: UseRouletteGameOptions): UseRouletteGameRe
   const [spinning, setSpinning] = useState(false);
   const [resultNum, setResultNum] = useState<number | null>(null);
   const [resultColour, setResultColour] = useState<RouletteColour | null>(null);
-  const [win, setWin] = useState<'jackpot' | 'small' | null>(null);
+  const [win, setWin] = useState<'jackpot' | 'small' | 'loss' | null>(null);
+  const [lastPayout, setLastPayout] = useState<number | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [wheelRotation, setWheelRotation] = useState(0);
   const [ballRotation, setBallRotation] = useState(0);
@@ -60,6 +62,7 @@ export function useRouletteGame(opts: UseRouletteGameOptions): UseRouletteGameRe
 
     setSpinning(true);
     setWin(null);
+    setLastPayout(null);
     setMessage(null);
     setResultNum(null);
     setResultColour(null);
@@ -75,9 +78,12 @@ export function useRouletteGame(opts: UseRouletteGameOptions): UseRouletteGameRe
         onUpdateBalance?.(payout);
         const tier: 'jackpot' | 'small' = payout >= bet * 10 ? 'jackpot' : 'small';
         setWin(tier);
+        setLastPayout(payout);
         setMessage(`Won ${payout}!`);
         soundEngine.playWin(theme);
       } else {
+        setWin('loss');
+        setLastPayout(0);
         setMessage(`Landed on ${num} (${colour}). Better luck next time.`);
         soundEngine.playLose(theme);
       }
@@ -90,7 +96,7 @@ export function useRouletteGame(opts: UseRouletteGameOptions): UseRouletteGameRe
     betType, setBetType,
     spinning,
     resultNum, resultColour,
-    win, message,
+    win, lastPayout, message,
     wheelRotation, ballRotation,
     spin,
   };

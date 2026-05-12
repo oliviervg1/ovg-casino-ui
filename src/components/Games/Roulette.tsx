@@ -22,6 +22,7 @@ export function Roulette({ name, theme, balance, onUpdateBalance, onBack }: Prop
       extraAssetKeys={[`roulette_${theme}`]}
       gameType="roulette"
       win={game.win}
+      lastPayout={game.lastPayout}
       bet={game.bet}
       onBet={game.setBet}
       onPlay={game.spin}
