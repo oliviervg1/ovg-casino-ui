@@ -79,6 +79,26 @@ if (location.search.includes('no-ces')) {
   // Mount the toast as soon as body exists.
   if (document.body) ensureToast();
   else document.addEventListener('DOMContentLoaded', ensureToast);
+} else if (location.search.includes('natural-ces')) {
+  // Test: drop our position-override entirely and let CES position itself
+  // (default inline style is "position: relative; z-index: 9999"). If this
+  // makes mobile taps work without our 144px overflow:hidden workaround,
+  // it confirms our forced position:fixed was the trigger for the CES
+  // shadow-DOM viewport-wide hit-capture bug — and we can strip the
+  // override from src/index.css permanently (cost: lose the bottom-left
+  // bubble placement on /game/* routes; bubble would always be wherever
+  // CES puts it natively, presumably bottom-right).
+  //
+  // Inline-style with !important beats our external !important rules,
+  // so this fully nullifies the override.
+  var applyNatural = function () {
+    var cesm = document.querySelector('ces-messenger');
+    if (!cesm) { setTimeout(applyNatural, 50); return; }
+    ['position', 'right', 'bottom', 'left', 'top', 'transform', 'width', 'height', 'overflow'].forEach(function (prop) {
+      cesm.style.setProperty(prop, prop === 'position' ? 'relative' : (prop === 'transform' ? 'none' : (prop === 'overflow' ? 'visible' : 'auto')), 'important');
+    });
+  };
+  applyNatural();
 } else if (location.search.includes('fix-ces')) {
   // Bubble is rendered at ~128px (icon + circular background), so the host
   // box needs to be at least that big or overflow:hidden clips it. 144px
