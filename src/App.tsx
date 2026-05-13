@@ -84,14 +84,6 @@ function AppContent() {
     document.documentElement.setAttribute('data-theme', currentTheme);
   }, [currentTheme]);
 
-  useEffect(() => {
-    let route: 'lobby' | 'world' | 'game' | 'other' = 'other';
-    if (location.pathname === '/') route = 'lobby';
-    else if (location.pathname.startsWith('/world/')) route = 'world';
-    else if (location.pathname.startsWith('/game/')) route = 'game';
-    document.documentElement.setAttribute('data-route', route);
-  }, [location.pathname]);
-
   // Sync user profile name with CES Messenger
   useEffect(() => {
     const cesm = document.querySelector('ces-messenger') as any;
