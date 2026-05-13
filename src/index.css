@@ -156,11 +156,6 @@
     color: var(--theme-text);
     transition: background-color 0.5s ease, color 0.5s ease;
   }
-  :root[data-theme="lobby"] body {
-    background-image:
-      linear-gradient(rgba(var(--theme-bg-rgb), 0.55), rgba(var(--theme-bg-rgb), 0.7)),
-      var(--bg-image);
-  }
 }
 
 /* CES messenger: theme/route-aware position. The custom element lives at the
