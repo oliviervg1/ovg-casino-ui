@@ -1,5 +1,6 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { ThemeType } from '../utils/themeManifesto';
+import { soundEngine } from '../utils/SoundEngine';
 
 export type NowPlayingGameType = 'roulette' | 'slots' | 'bingo' | 'world';
 
@@ -30,6 +31,12 @@ function readInitialMuted(): boolean {
 export function AudioControlsProvider({ children }: { children: ReactNode }) {
   const [muted, setMuted] = useState<boolean>(readInitialMuted);
   const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
+
+  // Keep SoundEngine's mute in lockstep with the React-side truth. SoundEngine
+  // reads localStorage once at module load; without this, a user who muted in
+  // one session and unmutes in the next has the music element unmute correctly
+  // while SFX (SoundEngine masterGain) stay silent.
+  useEffect(() => { soundEngine.setMuted(muted); }, [muted]);
 
   const toggleMute = useCallback(() => {
     setMuted(prev => {

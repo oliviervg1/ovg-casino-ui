@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { cleanup, render, screen, fireEvent } from '@testing-library/react';
 import { AudioControlsProvider, useAudioControls } from './AudioControlsContext';
+import { soundEngine } from '../utils/SoundEngine';
 
 function Probe() {
   const { muted, toggleMute, nowPlaying, setNowPlaying } = useAudioControls();
@@ -62,5 +63,30 @@ describe('AudioControlsContext', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     expect(() => render(<Bad />)).toThrow(/AudioControlsProvider/);
     spy.mockRestore();
+  });
+
+  it('pushes the initial muted value to soundEngine on mount (so SFX honour the persisted preference)', () => {
+    localStorage.setItem('ovg-audio-muted', 'true');
+    const setMutedSpy = vi.spyOn(soundEngine, 'setMuted');
+    try {
+      render(<AudioControlsProvider><Probe /></AudioControlsProvider>);
+      expect(setMutedSpy).toHaveBeenCalledWith(true);
+    } finally {
+      setMutedSpy.mockRestore();
+    }
+  });
+
+  it('pushes muted toggles to soundEngine so SFX mute in lockstep with the music element', () => {
+    const setMutedSpy = vi.spyOn(soundEngine, 'setMuted');
+    try {
+      render(<AudioControlsProvider><Probe /></AudioControlsProvider>);
+      setMutedSpy.mockClear();
+      fireEvent.click(screen.getByText('toggle'));
+      expect(setMutedSpy).toHaveBeenLastCalledWith(true);
+      fireEvent.click(screen.getByText('toggle'));
+      expect(setMutedSpy).toHaveBeenLastCalledWith(false);
+    } finally {
+      setMutedSpy.mockRestore();
+    }
   });
 });
