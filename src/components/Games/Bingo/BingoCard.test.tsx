@@ -149,4 +149,21 @@ describe('BingoCard', () => {
     );
     expect(screen.getByTestId('bingo-win-banner')).toBeTruthy();
   });
+
+  it('clips the BINGO! sweep with overflow-hidden on the outer relative wrapper', () => {
+    // Render with a winning state so the BINGO! banner mounts.
+    const drawn = new Set<number>([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    render(
+      <BingoCard
+        theme="west"
+        board={[[1, 2, 3], [4, 5, 6], [7, 8, 9]]}
+        drawn={drawn}
+        lastDrawn={9}
+        lines={{ rows: [true, true, true], cols: [true, true, true], diags: [true, true] }}
+        win="small"
+      />
+    );
+    const card = screen.getByTestId('bingo-card');
+    expect(card.className).toContain('overflow-hidden');
+  });
 });
