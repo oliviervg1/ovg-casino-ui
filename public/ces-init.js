@@ -1,10 +1,17 @@
-// Diagnostic: hide CES messenger when ?no-ces=1 is in the URL. Lets us
-// isolate mobile-tap issues without shipping a CES-less build to everyone.
-// Remove once the mobile-tap investigation is closed.
+// Diagnostic: ?no-ces=1 hides CES; ?show-ces=1 outlines its bounding box
+// in red so we can see how much of the viewport it actually covers on
+// mobile (Chrome on Android has a tap-blocking issue we're tracing).
+// Param-gated → no impact on regular users. Remove once investigation
+// is closed.
 if (location.search.includes('no-ces')) {
-  var diagStyle = document.createElement('style');
-  diagStyle.textContent = 'ces-messenger{display:none!important}';
-  document.head.appendChild(diagStyle);
+  var diagStyleHide = document.createElement('style');
+  diagStyleHide.textContent = 'ces-messenger{display:none!important}';
+  document.head.appendChild(diagStyleHide);
+} else if (location.search.includes('show-ces')) {
+  var diagStyleShow = document.createElement('style');
+  diagStyleShow.textContent =
+    'ces-messenger{outline:4px solid red!important;background:rgba(255,0,0,0.15)!important;}';
+  document.head.appendChild(diagStyleShow);
 }
 
 window.addEventListener('ces-messenger-loaded', () => {
