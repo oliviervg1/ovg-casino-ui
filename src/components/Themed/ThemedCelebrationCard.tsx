@@ -74,7 +74,7 @@ export function ThemedCelebrationCard({
         <div className={`${config.labelSize} ${themeManifesto[theme].font} text-theme-accent text-center font-black tracking-wider drop-shadow-[0_0_20px_rgba(255,255,255,0.4)]`}>
           {config.label(theme)}
         </div>
-        <WinAmountCounter amount={amount} tier={tier} theme={theme} />
+        <WinAmountCounter amount={amount} tier={tier} />
       </div>
     </div>
   );

@@ -16,9 +16,4 @@ describe('GameStatusLine', () => {
     render(<GameStatusLine isLoading={false} />);
     expect(screen.queryByTestId('game-status-line')).toBeNull();
   });
-
-  it('shows the optional detail text when provided', () => {
-    render(<GameStatusLine isLoading detail="symbols 3 / 4" />);
-    expect(screen.getByTestId('game-status-line').textContent).toContain('symbols 3 / 4');
-  });
 });

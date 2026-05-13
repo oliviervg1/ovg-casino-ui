@@ -1,18 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMotion } from '../../hooks/useMotion';
-import { type ThemeType } from '../../utils/themeManifesto';
 
 interface Props {
   amount: number;
   tier: 'jackpot' | 'small';
-  theme: ThemeType;
 }
 
 function format(n: number): string {
   return `$${Math.round(n).toLocaleString('en-US')}`;
 }
 
-export function WinAmountCounter({ amount, tier, theme }: Props) {
+export function WinAmountCounter({ amount, tier }: Props) {
   const motion = useMotion();
   const durationMs = tier === 'jackpot' ? 1200 : 600;
   const [displayed, setDisplayed] = useState<number>(motion.shouldAnimate ? 0 : amount);

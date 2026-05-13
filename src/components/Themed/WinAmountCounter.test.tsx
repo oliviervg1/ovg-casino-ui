@@ -20,7 +20,7 @@ describe('WinAmountCounter', () => {
       return rafCbs.length;
     });
 
-    const { container } = render(<WinAmountCounter amount={500} tier="small" theme="sweets" />);
+    const { container } = render(<WinAmountCounter amount={500} tier="small" />);
     expect(container.textContent).toBe('$0');
 
     // Advance to mid-animation
@@ -35,7 +35,7 @@ describe('WinAmountCounter', () => {
   });
 
   it('has aria-hidden="true"', () => {
-    const { container } = render(<WinAmountCounter amount={100} tier="small" theme="sweets" />);
+    const { container } = render(<WinAmountCounter amount={100} tier="small" />);
     const el = container.firstElementChild as HTMLElement;
     expect(el.getAttribute('aria-hidden')).toBe('true');
   });
@@ -46,7 +46,7 @@ describe('WinAmountCounter', () => {
     // Egyptian / vampiric / etc. display fonts stay reserved for hero text
     // where they're legible." A `font-vampire`/`font-egypt` etc. on the
     // counter renders the dollar amount in an illegible decorative font.
-    const { container } = render(<WinAmountCounter amount={100} tier="jackpot" theme="vampire" />);
+    const { container } = render(<WinAmountCounter amount={100} tier="jackpot" />);
     const cls = (container.firstElementChild as HTMLElement).className;
     expect(cls).not.toContain('font-vampire');
     expect(cls).not.toContain('font-egypt');
@@ -64,7 +64,7 @@ describe('WinAmountCounter (reduced motion)', () => {
 
   it('renders the final amount immediately, no tick', async () => {
     const { WinAmountCounter: ReducedCounter } = await import('./WinAmountCounter');
-    const { container } = render(<ReducedCounter amount={777} tier="jackpot" theme="space" />);
+    const { container } = render(<ReducedCounter amount={777} tier="jackpot" />);
     expect(container.textContent).toBe('$777');
   });
 });
