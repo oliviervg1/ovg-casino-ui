@@ -1,8 +1,12 @@
-// Diagnostic: ?no-ces=1 hides CES; ?show-ces=1 outlines its bounding box
-// in red so we can see how much of the viewport it actually covers on
-// mobile (Chrome on Android has a tap-blocking issue we're tracing).
-// Param-gated → no impact on regular users. Remove once investigation
-// is closed.
+// Diagnostic modes (param-gated, no impact on regular users):
+//   ?no-ces=1   — hide CES messenger entirely (confirmed CES is the
+//                 mobile-tap blocker — d5e5dc3)
+//   ?show-ces=1 — outline ces-messenger host in red (confirmed host
+//                 element is small, ~bubble-sized — so the blocker is
+//                 something CES is injecting elsewhere)
+//   ?diag-tap=1 — tap-tracker. Shows a toast on every touchstart with
+//                 the element that received it. Reveals what's actually
+//                 capturing taps when buttons feel dead.
 if (location.search.includes('no-ces')) {
   var diagStyleHide = document.createElement('style');
   diagStyleHide.textContent = 'ces-messenger{display:none!important}';
@@ -12,6 +16,60 @@ if (location.search.includes('no-ces')) {
   diagStyleShow.textContent =
     'ces-messenger{outline:4px solid red!important;background:rgba(255,0,0,0.15)!important;}';
   document.head.appendChild(diagStyleShow);
+} else if (location.search.includes('diag-tap')) {
+  var diagTapStyle = document.createElement('style');
+  diagTapStyle.textContent =
+    '#diag-tap-toast{position:fixed;top:0;left:0;right:0;background:#000;color:#0f0;' +
+    'padding:8px;z-index:99999;font-family:monospace;font-size:11px;line-height:1.3;' +
+    'word-break:break-all;border-bottom:2px solid #0f0;pointer-events:none;}';
+  document.head.appendChild(diagTapStyle);
+  var ensureToast = function () {
+    var t = document.getElementById('diag-tap-toast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'diag-tap-toast';
+      t.textContent = 'tap-tracker armed — tap a button to see what received it';
+      document.body.appendChild(t);
+    }
+    return t;
+  };
+  var formatEl = function (el) {
+    if (!el) return 'null';
+    var name = el.tagName || el.nodeName || '?';
+    if (el.id) name += '#' + el.id;
+    if (el.className && typeof el.className === 'string') {
+      name += '.' + el.className.trim().replace(/\s+/g, '.');
+    }
+    return name;
+  };
+  var trackTap = function (e) {
+    var t = ensureToast();
+    var pt = (e.touches && e.touches[0]) || e;
+    var x = pt.clientX,
+      y = pt.clientY;
+    var topEl = document.elementFromPoint(x, y);
+    var path = [];
+    var cur = topEl;
+    while (cur && path.length < 5) {
+      path.push(formatEl(cur));
+      cur = cur.parentElement;
+    }
+    t.textContent =
+      'TAP @' +
+      Math.round(x) +
+      ',' +
+      Math.round(y) +
+      ' → top: ' +
+      formatEl(topEl) +
+      ' | path: ' +
+      path.join(' ‹ ');
+  };
+  // Capture-phase so we see the element BEFORE any other handler can stop it.
+  document.addEventListener('touchstart', trackTap, { capture: true, passive: true });
+  document.addEventListener('click', trackTap, { capture: true });
+  // Mount the toast as soon as body exists.
+  if (document.body) ensureToast();
+  else document.addEventListener('DOMContentLoaded', ensureToast);
 }
 
 window.addEventListener('ces-messenger-loaded', () => {
