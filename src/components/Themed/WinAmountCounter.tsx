@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMotion } from '../../hooks/useMotion';
-import { themeManifesto, type ThemeType } from '../../utils/themeManifesto';
+import { type ThemeType } from '../../utils/themeManifesto';
 
 interface Props {
   amount: number;
@@ -35,7 +35,7 @@ export function WinAmountCounter({ amount, tier, theme }: Props) {
   }, [amount, durationMs, motion.shouldAnimate]);
 
   return (
-    <span aria-hidden="true" className={`${themeManifesto[theme].font} text-theme-accent`}>
+    <span aria-hidden="true" className="text-theme-accent font-bold tabular-nums text-[4vh]">
       {format(displayed)}
     </span>
   );

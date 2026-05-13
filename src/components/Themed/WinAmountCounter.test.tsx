@@ -40,9 +40,16 @@ describe('WinAmountCounter', () => {
     expect(el.getAttribute('aria-hidden')).toBe('true');
   });
 
-  it('uses themeManifesto font class for the given theme', () => {
+  it('does NOT apply the themeManifesto display font (counter is body-text, must stay legible)', () => {
+    // Spec (2026-05-13-celebration-cleanup-design.md): "Body text — the
+    // WinAmountCounter and any descriptive copy — uses the default sans-serif.
+    // Egyptian / vampiric / etc. display fonts stay reserved for hero text
+    // where they're legible." A `font-vampire`/`font-egypt` etc. on the
+    // counter renders the dollar amount in an illegible decorative font.
     const { container } = render(<WinAmountCounter amount={100} tier="jackpot" theme="vampire" />);
-    expect((container.firstElementChild as HTMLElement).className).toContain('font-vampire');
+    const cls = (container.firstElementChild as HTMLElement).className;
+    expect(cls).not.toContain('font-vampire');
+    expect(cls).not.toContain('font-egypt');
   });
 });
 
