@@ -29,7 +29,7 @@ const TIER_CONFIG: Record<CelebrationTier, TierConfig> = {
     durationMs: 2500,
     particleCount: 15,
     labelSize: 'text-[5vh]',
-    cardClass: 'w-[60vh] max-w-[80%] aspect-[3/2] bg-theme-card/95 rounded-3xl shadow-2xl border-[0.4vh] border-theme-accent flex flex-col items-center justify-center gap-[2vh] p-[3vh] relative overflow-hidden',
+    cardClass: 'w-[60vh] max-w-[80%] mx-auto aspect-[3/2] bg-theme-card/95 rounded-3xl shadow-2xl border-[0.4vh] border-theme-accent flex flex-col items-center justify-center gap-[2vh] p-[3vh] relative overflow-hidden',
     label: (theme) => themeCopy[theme].small,
   },
   jackpot: {

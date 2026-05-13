@@ -73,4 +73,16 @@ describe('ThemedCelebrationCard', () => {
     fireEvent.click(innerContent);
     expect(onDismiss).not.toHaveBeenCalled();
   });
+
+  it('small-tier card content centers itself within its container (mx-auto)', () => {
+    // Bug evidence (DevTools getBoundingClientRect on prod 00017-8hb):
+    //   viewport=1428w, positioner=1142.4w centered (x=142.8), but
+    //   card-content max-w-[80%] resolves to 913.9px and was left-aligned
+    //   inside the positioner — visible center 599.75 vs viewport center
+    //   714, ~114px off-center to the left. mx-auto centers the
+    //   visible card within its container, fixing the perceived offset.
+    renderCard({ tier: 'small' });
+    const cardContent = screen.getByTestId('celebration-card-content');
+    expect(cardContent.className).toContain('mx-auto');
+  });
 });
