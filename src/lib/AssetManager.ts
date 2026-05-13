@@ -1,5 +1,5 @@
 import { auth } from '../firebase';
-import { RegenQuotaExceededError, classifyRateLimit } from './errors';
+import { classifyRateLimit } from './errors';
 
 // Re-export so existing callers (e.g. Profile.tsx, useAssets) keep working
 // after the class moved to ./errors.ts.
@@ -44,12 +44,3 @@ export async function regenerateAsset(key: string): Promise<string> {
   return data.url;
 }
 
-// Kept for source-compat with hook signature; preloads via getAsset memoisation.
-export async function preloadAssets(keys: string[]) {
-  await Promise.all(keys.map(k => getAsset(k)));
-}
-
-// Re-thrown by the RegenQuotaExceededError class above so the original
-// instanceof references in the rest of the codebase keep working without
-// caring whether the rejection originated in AssetManager or MusicManager.
-// (Both share the same shared class from ./errors.ts.)

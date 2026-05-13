@@ -3,7 +3,7 @@ import { angleOfPocket, evaluateRouletteBet, type RouletteColour } from '../comp
 import { soundEngine } from '../utils/SoundEngine';
 import type { ThemeType } from '../utils/themeManifesto';
 
-export const SETTLE_MS = 2500;
+const SETTLE_MS = 2500;
 const WHEEL_TURNS = 5;
 const BALL_TURNS = 7;
 

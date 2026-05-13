@@ -5,7 +5,7 @@ import { themeParticles } from '../../utils/themeParticles';
 import { ParticleField } from './ParticleField';
 import { WinAmountCounter } from './WinAmountCounter';
 
-export type CelebrationTier = 'small' | 'jackpot';
+type CelebrationTier = 'small' | 'jackpot';
 
 export interface ThemedCelebrationCardProps {
   tier: CelebrationTier;

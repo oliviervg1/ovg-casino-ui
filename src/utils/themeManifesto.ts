@@ -17,7 +17,7 @@ export type CelebrationVariant = 'candy-burst' | 'sandstorm-gold' | 'supernova' 
 export type SkeletonVariant = 'unwrap' | 'hieroglyph-fade' | 'hyperspace-streak' | 'wagon-wheel' | 'sonar-ripple' | 'vine-grow' | 'candle-flicker' | 'ink-bleed';
 export type AudioClickVariant = 'candy-crinkle' | 'parchment-rustle' | 'laser-blip' | 'spur-jingle' | 'bubble-pop' | 'wood-knock' | 'velvet-tap' | 'sword-tap';
 
-export interface Wiggle { duration_ms: number; magnitude_px: number; }
+interface Wiggle { duration_ms: number; magnitude_px: number; }
 
 export interface Manifesto {
   /** Display name shown in lobby world cards, game titles, etc. */

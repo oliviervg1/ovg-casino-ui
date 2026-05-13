@@ -1,15 +1,11 @@
 import { auth } from '../firebase';
 
 export enum OperationType {
-  CREATE = 'create',
   UPDATE = 'update',
-  DELETE = 'delete',
-  LIST = 'list',
   GET = 'get',
-  WRITE = 'write',
 }
 
-export interface FirestoreErrorInfo {
+interface FirestoreErrorInfo {
   error: string;
   operationType: OperationType;
   path: string | null;
@@ -28,7 +24,7 @@ export interface FirestoreErrorInfo {
   }
 }
 
-export class FirestoreOperationError extends Error {
+class FirestoreOperationError extends Error {
   operationType: OperationType;
   path: string | null;
   authInfo: FirestoreErrorInfo['authInfo'];

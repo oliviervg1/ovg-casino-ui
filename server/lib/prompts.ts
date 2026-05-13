@@ -145,5 +145,3 @@ export const MUSIC_PROMPTS: Record<string, string> = {
   ninja_world: "A peaceful, meditative track with shakuhachi flute and koto for browsing a feudal Japan dojo casino lobby. Zen, reflective, restrained.",
 };
 
-export type AssetKey = keyof typeof ASSET_PROMPTS;
-export type MusicKey = keyof typeof MUSIC_PROMPTS;
