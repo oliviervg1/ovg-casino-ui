@@ -5,7 +5,7 @@ import type { ThemeType } from '../utils/themeManifesto';
 
 export const DRAW_INTERVAL_MS = 600;
 export const MAX_DRAWS = 12;
-const POOL_SIZE = 30;
+export const POOL_SIZE = 30;
 
 function makeBoard(): number[][] {
   const pool = Array.from({ length: POOL_SIZE }, (_, i) => i + 1).sort(() => Math.random() - 0.5);

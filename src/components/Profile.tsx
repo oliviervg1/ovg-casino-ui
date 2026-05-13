@@ -2,6 +2,7 @@ import { motion } from 'motion/react';
 import { ArrowLeft, User as UserIcon, LogOut, Wallet, RefreshCw } from 'lucide-react';
 import { UserProfile } from '../hooks/useUser';
 import { useBatchRegenerate } from '../hooks/useBatchRegenerate';
+import { REGEN_ERROR_MESSAGES } from './Lobby/AIPitchStrip';
 
 interface ProfileProps {
   profile: UserProfile;
@@ -54,14 +55,10 @@ export function Profile({ profile, onBack, onLogout }: ProfileProps) {
               {isRegenerating ? (regenStatus ?? 'REGENERATING…') : 'REGENERATE ASSETS'}
             </button>
             {!isRegenerating && regenStatus && <p className="text-sm opacity-80">{regenStatus}</p>}
-            {regenError === 'quota' && (
-              <p className="text-sm text-red-400">Daily regenerate quota exceeded — try again tomorrow.</p>
-            )}
-            {regenError === 'rate-limit' && (
-              <p className="text-sm text-yellow-400">Rate limit hit — wait a minute and retry.</p>
-            )}
-            {regenError === 'partial' && (
-              <p className="text-sm text-yellow-400">Some assets failed to regenerate — try the unaffected ones again.</p>
+            {regenError && (
+              <p className={`text-sm ${regenError === 'quota' ? 'text-red-400' : 'text-yellow-400'}`}>
+                {REGEN_ERROR_MESSAGES[regenError]}
+              </p>
             )}
           </div>
 

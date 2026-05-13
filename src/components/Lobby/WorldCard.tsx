@@ -1,9 +1,7 @@
 import { themeManifesto, type ThemeType } from '../../utils/themeManifesto';
-import { GAME_REGISTRY } from '../../config/games';
+import { GAME_REGISTRY, type GameKind } from '../../config/games';
 
-type GameType = 'roulette' | 'slots' | 'bingo';
-
-const GAME_ICONS: Record<GameType, string> = {
+const GAME_ICONS: Record<GameKind, string> = {
   roulette: '🎡',
   slots: '🎰',
   bingo: '🎟',
@@ -21,10 +19,10 @@ interface WorldCardProps {
 
 export function WorldCard({ theme, bgImageUrl, onSelectWorld, onSelectGame, 'data-testid': testId }: WorldCardProps) {
   const m = themeManifesto[theme];
-  const gameTypes: GameType[] = ['roulette', 'slots', 'bingo'];
+  const gameTypes: GameKind[] = ['roulette', 'slots', 'bingo'];
 
   const handleCardClick = () => onSelectWorld(theme);
-  const handleIconClick = (gt: GameType) => (e: React.MouseEvent) => {
+  const handleIconClick = (gt: GameKind) => (e: React.MouseEvent) => {
     e.stopPropagation();
     const game = GAME_REGISTRY.find(g => g.type === gt && g.theme === theme);
     if (game) onSelectGame(game.id);

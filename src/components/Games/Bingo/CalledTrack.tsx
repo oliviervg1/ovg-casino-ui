@@ -1,7 +1,7 @@
 import { type ThemeType } from '../../../utils/themeManifesto';
-import { MAX_DRAWS } from '../../../hooks/useBingoGame';
+import { MAX_DRAWS, POOL_SIZE } from '../../../hooks/useBingoGame';
 
-const POOL = Array.from({ length: 30 }, (_, i) => i + 1);
+const POOL = Array.from({ length: POOL_SIZE }, (_, i) => i + 1);
 
 export interface CalledTrackProps {
   theme: ThemeType;

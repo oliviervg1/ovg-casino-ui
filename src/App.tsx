@@ -25,7 +25,6 @@ import { AudioControlsProvider } from './contexts/AudioControlsContext';
 import { CelebrationProvider } from './contexts/CelebrationContext';
 
 export type { ThemeType } from './utils/themeManifesto';
-export type GameType = string;
 
 function GameRouteWrapper() {
   const { gameId } = useParams<{ gameId: string }>();

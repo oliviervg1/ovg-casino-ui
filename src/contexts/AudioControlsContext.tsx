@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { ThemeType } from '../utils/themeManifesto';
-import { soundEngine } from '../utils/SoundEngine';
+import { soundEngine, AUDIO_MUTED_STORAGE_KEY } from '../utils/SoundEngine';
 
 export type NowPlayingGameType = 'roulette' | 'slots' | 'bingo' | 'world';
 
@@ -16,13 +16,11 @@ export interface AudioControls {
   setNowPlaying: (np: NowPlaying | null) => void;
 }
 
-const STORAGE_KEY = 'ovg-audio-muted';
-
 const AudioControlsContext = createContext<AudioControls | null>(null);
 
 function readInitialMuted(): boolean {
   try {
-    return localStorage.getItem(STORAGE_KEY) === 'true';
+    return localStorage.getItem(AUDIO_MUTED_STORAGE_KEY) === 'true';
   } catch {
     return false;
   }
@@ -41,7 +39,7 @@ export function AudioControlsProvider({ children }: { children: ReactNode }) {
   const toggleMute = useCallback(() => {
     setMuted(prev => {
       const next = !prev;
-      try { localStorage.setItem(STORAGE_KEY, String(next)); } catch { /* ignore */ }
+      try { localStorage.setItem(AUDIO_MUTED_STORAGE_KEY, String(next)); } catch { /* ignore */ }
       return next;
     });
   }, []);

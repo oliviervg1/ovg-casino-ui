@@ -1,4 +1,3 @@
-import { GameType } from '../App';
 import { AIPitchStrip } from './Lobby/AIPitchStrip';
 import { LobbyGrid } from './Lobby/LobbyGrid';
 import { useBatchRegenerate } from '../hooks/useBatchRegenerate';
@@ -6,7 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import type { ThemeType } from '../utils/themeManifesto';
 
 interface LobbyProps {
-  onSelectGame: (game: GameType) => void;
+  /** Game id from GAME_REGISTRY (e.g. 'sugar-spin', 'candy-crushers'). */
+  onSelectGame: (gameId: string) => void;
 }
 
 export function Lobby({ onSelectGame }: LobbyProps) {
@@ -22,7 +22,7 @@ export function Lobby({ onSelectGame }: LobbyProps) {
         error={regenError}
       />
       <LobbyGrid
-        onSelectGame={(gameId) => onSelectGame(gameId as GameType)}
+        onSelectGame={onSelectGame}
         onSelectWorld={(theme: ThemeType) => navigate(`/world/${theme}`)}
       />
     </div>

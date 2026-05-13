@@ -1,4 +1,9 @@
-import { ThemeType } from '../App';
+import type { ThemeType } from './themeManifesto';
+
+/** localStorage key shared with AudioControlsContext. Both layers persist
+ *  the muted flag here; SoundEngine reads it once at module load to seed
+ *  initial gain (the React context then drives runtime updates via setMuted). */
+export const AUDIO_MUTED_STORAGE_KEY = 'ovg-audio-muted';
 
 class SoundEngine {
   private ctx: AudioContext | null = null;
@@ -17,7 +22,7 @@ class SoundEngine {
   }
 
   private muted: boolean = (() => {
-    try { return localStorage.getItem('ovg-audio-muted') === 'true'; } catch { return false; }
+    try { return localStorage.getItem(AUDIO_MUTED_STORAGE_KEY) === 'true'; } catch { return false; }
   })();
   private baseVolume = 0.5;
 

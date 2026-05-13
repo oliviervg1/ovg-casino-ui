@@ -1,9 +1,13 @@
-import { ThemeType } from '../App';
+import type { ThemeType } from '../utils/themeManifesto';
+
+/** Shared game-category union. Used by GameDefinition.type, the lobby
+ *  WorldCard's per-card icons, and the GameRouteWrapper switch. */
+export type GameKind = 'roulette' | 'slots' | 'bingo';
 
 export interface GameDefinition {
   id: string;
   name: string;
-  type: 'roulette' | 'slots' | 'bingo';
+  type: GameKind;
   theme: ThemeType;
   description: string;
 }

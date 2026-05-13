@@ -9,7 +9,10 @@ interface AIPitchStripProps {
   error?: BatchRegenerateError;
 }
 
-const ERROR_MESSAGES: Record<Exclude<BatchRegenerateError, null>, string> = {
+/** Shared error messages for regenerate-batch failures. Used by AIPitchStrip
+ *  in the lobby and Profile.tsx's regenerate-assets block. Single source of
+ *  truth so the strings don't drift between the two surfaces. */
+export const REGEN_ERROR_MESSAGES: Record<Exclude<BatchRegenerateError, null>, string> = {
   quota: 'Daily regenerate quota exceeded — try again tomorrow.',
   'rate-limit': 'Rate limit hit — wait a minute and retry.',
   partial: 'Some assets failed to regenerate — try again later.',
@@ -24,7 +27,7 @@ export function AIPitchStrip({ onRegenerate, isRegenerating, status, error }: AI
   let subline: string;
   let sublineClass: string;
   if (error) {
-    subline = ERROR_MESSAGES[error];
+    subline = REGEN_ERROR_MESSAGES[error];
     sublineClass = 'text-xs text-red-300 mt-1 m-0';
   } else if (isRegenerating) {
     subline = `Re-rolling worlds · ${status ?? 'starting…'} · Lyria 3 composing soundtracks…`;
