@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+For the themed-immersive redesign history (atoms catalog, what shipped per plan, deferred items, lessons learned), see `docs/REDESIGN_HISTORY.md`.
+
 ## Commands
 
 ```bash
@@ -59,7 +61,7 @@ There are two rate-limit layers and the client treats them differently:
 
 Both error classes live in `src/lib/errors.ts` and are re-exported from both `AssetManager.ts` and `MusicManager.ts` so a single `instanceof` check works regardless of which manager rejected — do not re-introduce per-module duplicate classes.
 
-`Profile.tsx` runs the regenerate-everything batch through a worker pool capped at `REGEN_CONCURRENCY = 4`. Each regenerate POST is one token, so the burst is bounded by 4 inflight against the 30/min generation limit and drains 105 tasks (81 image + 24 music) in ~3.5 min without 429s. Don't raise it without raising `RATE_LIMIT_RPM`.
+`src/hooks/useBatchRegenerate.ts` runs the Profile-page Regenerate-Assets batch through a worker pool capped at `REGEN_CONCURRENCY = 4` (the work list — `ASSET_KEYS` + `MUSIC_PAIRS` — is derived from `THEME_NAMES`, so adding a new theme grows the batch automatically). Each regenerate POST is one token, so the burst is bounded by 4 inflight against the 30/min generation limit and drains 105 tasks (81 image + 24 music) in ~3.5 min without 429s. Don't raise the cap without raising `RATE_LIMIT_RPM`.
 
 ### Server-side prompts are the keyspace
 
@@ -67,17 +69,21 @@ Both error classes live in `src/lib/errors.ts` and are re-exported from both `As
 
 ### Adding a theme = touch seven places
 
-Themes appear in seven locations and missing one silently breaks the new theme (404s on the API, doesn't appear in the lobby, slots reels render `❓`). For each new theme add:
+Themes appear in seven locations and missing one silently breaks the new theme (404s on the API, doesn't appear in the lobby, slots reels render `❓`, no celebration copy, no themed background). For each new theme add:
 
-1. `server/lib/prompts.ts` — 10 `ASSET_PROMPTS` keys (3 game pictograms + 4 symbols + 3 backgrounds) and 3 `MUSIC_PROMPTS` keys.
-2. `src/utils/themeStyles.ts` — push to `lightThemes` or `darkThemes`; add a `getThemeStyles()` entry.
-3. `src/App.tsx` — extend the `ThemeType` string union.
-4. `src/components/Lobby.tsx` — add to the `themes` array (id, name, color, fallback emojis).
-5. `src/components/Games/Slots.tsx` — add to `FALLBACK_SYMBOLS_MAP` (loading-state emojis).
-6. `src/components/Profile.tsx` — add to the hard-coded theme array driving `ASSET_KEYS`/`MUSIC_PAIRS` so Regenerate-Assets refreshes it.
-7. `src/config/games.ts` — add roulette/slots/bingo entries so games are routable from `/game/:gameId`.
+1. **`src/utils/themeManifesto.ts`** — extend the `ThemeType` union, append to `THEME_NAMES`, and add a `themeManifesto` map entry. The map carries every per-theme design token: `displayName`, `font` (the tailwind class, e.g. `'font-sweets'`), `surface`, `button`, `border`, `motionIdle`, `celebration`, `skeleton`, `audioClick`, `wiggle: { duration_ms, magnitude_px }`. **This is the source of truth** — `App.tsx` only re-exports `ThemeType` from here.
+2. **`src/utils/themeParticles.ts`** — add to `themeParticles` map: `pool` (6 emoji from the world), `primitives` (subset of `'sparkle' | 'dot' | 'arc'`), `primitiveTint` (CSS color expression, usually `'var(--theme-accent)'`), `motion` (`velocityRange`, `gravity`, `lifetimeMs`, optional `rotation`).
+3. **`src/utils/themeCopy.ts`** — add to `themeCopy` map: `small` (small-win banner copy), `jackpotLabel` (full-screen jackpot title), `loss` (loss-plate copy).
+4. **`src/index.css`** — two additions:
+   - In the `@theme {}` block at the top: `--font-<theme>: "FontName", "Inter", <fallback>;` (Tailwind v4 auto-generates the `font-<theme>` utility class from this).
+   - At the bottom: a `:root[data-theme="<name>"] { ... }` rule with all six per-theme color variables (`--theme-bg`, `--theme-bg-rgb`, `--theme-card`, `--theme-primary`, `--theme-secondary`, `--theme-accent`, `--theme-text`).
+5. **`server/lib/prompts.ts`** — add 10 `ASSET_PROMPTS` keys (3 game pictograms + 4 symbols + 3 backgrounds) and 3 `MUSIC_PROMPTS` keys.
+6. **`src/components/Games/Slots.tsx`** — add 4 emoji to `FALLBACK_SYMBOLS_MAP` (rendered while symbol assets load).
+7. **`src/config/games.ts`** — add 3 entries to `GAME_REGISTRY` (one each for roulette / slots / bingo) so the games are routable from `/game/:gameId`.
 
-`bg_main` is a *non-theme-scoped* background key seeded once, used by lobby/profile chrome.
+That's it: `Profile.tsx`'s Regenerate-Assets now derives its work list from `THEME_NAMES` via `useBatchRegenerate.ts` (no manual update needed). `Lobby.tsx` likewise drives `LobbyGrid` from `THEME_NAMES`. If the font in step 4 is from Google Fonts and not yet loaded, also add it to the `<link>` in `index.html`.
+
+`bg_main` is a *non-theme-scoped* background key seeded once at app load (`src/App.tsx`), used by the lobby and profile chrome. It has its own `ASSET_PROMPTS` entry — not theme-iterated.
 
 ### Firebase wiring
 
