@@ -1,4 +1,3 @@
-import React from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, CircleDashed, Layout, Grid, BookOpen, AlertCircle } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';

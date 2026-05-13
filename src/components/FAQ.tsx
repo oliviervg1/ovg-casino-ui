@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, HelpCircle, ShieldCheck, CreditCard, Gift, Dices, AlertTriangle, MonitorPlay, ArrowLeft } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
