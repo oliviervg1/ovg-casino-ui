@@ -29,7 +29,7 @@ export function RouletteSurface({ theme, game }: RouletteSurfaceProps) {
         onSelect={(t: BetType) => game.setBetType(t)}
         disabled={game.spinning}
       />
-      <ResultStrip resultNum={game.resultNum} resultColour={game.resultColour} message={game.message} />
+      <ResultStrip resultNum={game.resultNum} resultColour={game.resultColour} />
     </div>
   );
 }

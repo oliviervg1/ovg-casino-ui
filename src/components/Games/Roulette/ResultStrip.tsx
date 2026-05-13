@@ -4,7 +4,6 @@ import { type RouletteColour } from '../gameLogic';
 export interface ResultStripProps {
   resultNum: number | null;
   resultColour: RouletteColour | null;
-  message: string | null;
 }
 
 const BADGE_BG: Record<RouletteColour, string> = {
@@ -13,7 +12,7 @@ const BADGE_BG: Record<RouletteColour, string> = {
   green: 'bg-green-600',
 };
 
-export function ResultStrip({ resultNum, resultColour, message }: ResultStripProps) {
+export function ResultStrip({ resultNum, resultColour }: ResultStripProps) {
   if (resultNum === null || resultColour === null) return null;
   return (
     <motion.div
@@ -30,7 +29,6 @@ export function ResultStrip({ resultNum, resultColour, message }: ResultStripPro
       >
         {resultNum}
       </div>
-      <span className="text-theme-text text-[2vh] md:text-[2.2vh] font-medium">{message}</span>
     </motion.div>
   );
 }
