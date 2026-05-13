@@ -1,122 +1,10 @@
-// Diagnostic modes (param-gated, no impact on regular users):
-//   ?no-ces=1   — hide CES messenger entirely (confirmed CES is the
-//                 mobile-tap blocker — d5e5dc3)
-//   ?show-ces=1 — outline ces-messenger host in red (confirmed host
-//                 element is small, ~bubble-sized — so the blocker is
-//                 something CES is injecting elsewhere)
-//   ?diag-tap=1 — tap-tracker. Shows a toast on every touchstart with
-//                 the element that received it. Confirmed:
-//                 elementFromPoint returns CES-MESSENGER for ANY point
-//                 on the viewport, even though the host's outline is
-//                 small. → CES shadow DOM has a position:fixed child
-//                 that escapes the host's box and hijacks hit-testing.
-//   ?fix-ces=1  — candidate fix: constrain the host to a 64x64 bubble
-//                 box with transform (creates containing block for the
-//                 shadow's fixed children) + overflow:hidden (clips
-//                 them). Toggles a .chat-open class on the host when
-//                 CES dispatches ces-chat-open-changed so the panel
-//                 can expand normally on tap.
+// Diagnostic mode: ?no-ces=1 hides the CES messenger entirely. Useful
+// for confirming whether CES is responsible for a tap/layout regression
+// without needing a build that strips it.
 if (location.search.includes('no-ces')) {
   var diagStyleHide = document.createElement('style');
   diagStyleHide.textContent = 'ces-messenger{display:none!important}';
   document.head.appendChild(diagStyleHide);
-} else if (location.search.includes('show-ces')) {
-  var diagStyleShow = document.createElement('style');
-  diagStyleShow.textContent =
-    'ces-messenger{outline:4px solid red!important;background:rgba(255,0,0,0.15)!important;}';
-  document.head.appendChild(diagStyleShow);
-} else if (location.search.includes('diag-tap')) {
-  var diagTapStyle = document.createElement('style');
-  diagTapStyle.textContent =
-    '#diag-tap-toast{position:fixed;top:0;left:0;right:0;background:#000;color:#0f0;' +
-    'padding:8px;z-index:99999;font-family:monospace;font-size:11px;line-height:1.3;' +
-    'word-break:break-all;border-bottom:2px solid #0f0;pointer-events:none;}';
-  document.head.appendChild(diagTapStyle);
-  var ensureToast = function () {
-    var t = document.getElementById('diag-tap-toast');
-    if (!t) {
-      t = document.createElement('div');
-      t.id = 'diag-tap-toast';
-      t.textContent = 'tap-tracker armed — tap a button to see what received it';
-      document.body.appendChild(t);
-    }
-    return t;
-  };
-  var formatEl = function (el) {
-    if (!el) return 'null';
-    var name = el.tagName || el.nodeName || '?';
-    if (el.id) name += '#' + el.id;
-    if (el.className && typeof el.className === 'string') {
-      name += '.' + el.className.trim().replace(/\s+/g, '.');
-    }
-    return name;
-  };
-  var trackTap = function (e) {
-    var t = ensureToast();
-    var pt = (e.touches && e.touches[0]) || e;
-    var x = pt.clientX,
-      y = pt.clientY;
-    var topEl = document.elementFromPoint(x, y);
-    var path = [];
-    var cur = topEl;
-    while (cur && path.length < 5) {
-      path.push(formatEl(cur));
-      cur = cur.parentElement;
-    }
-    t.textContent =
-      'TAP @' +
-      Math.round(x) +
-      ',' +
-      Math.round(y) +
-      ' → top: ' +
-      formatEl(topEl) +
-      ' | path: ' +
-      path.join(' ‹ ');
-  };
-  // Capture-phase so we see the element BEFORE any other handler can stop it.
-  document.addEventListener('touchstart', trackTap, { capture: true, passive: true });
-  document.addEventListener('click', trackTap, { capture: true });
-  // Mount the toast as soon as body exists.
-  if (document.body) ensureToast();
-  else document.addEventListener('DOMContentLoaded', ensureToast);
-} else if (location.search.includes('natural-ces')) {
-  // Test: drop our position-override entirely and let CES position itself
-  // (default inline style is "position: relative; z-index: 9999"). If this
-  // makes mobile taps work without our 144px overflow:hidden workaround,
-  // it confirms our forced position:fixed was the trigger for the CES
-  // shadow-DOM viewport-wide hit-capture bug — and we can strip the
-  // override from src/index.css permanently (cost: lose the bottom-left
-  // bubble placement on /game/* routes; bubble would always be wherever
-  // CES puts it natively, presumably bottom-right).
-  //
-  // Inline-style with !important beats our external !important rules,
-  // so this fully nullifies the override.
-  var applyNatural = function () {
-    var cesm = document.querySelector('ces-messenger');
-    if (!cesm) { setTimeout(applyNatural, 50); return; }
-    ['position', 'right', 'bottom', 'left', 'top', 'transform', 'width', 'height', 'overflow'].forEach(function (prop) {
-      cesm.style.setProperty(prop, prop === 'position' ? 'relative' : (prop === 'transform' ? 'none' : (prop === 'overflow' ? 'visible' : 'auto')), 'important');
-    });
-  };
-  applyNatural();
-} else if (location.search.includes('fix-ces')) {
-  // Bubble is rendered at ~128px (icon + circular background), so the host
-  // box needs to be at least that big or overflow:hidden clips it. 144px
-  // gives a small margin without making the hit-area noticeably wider than
-  // the bubble itself.
-  var fixStyle = document.createElement('style');
-  fixStyle.textContent =
-    'ces-messenger{width:144px!important;height:144px!important;' +
-    'overflow:hidden!important;transform:translateZ(0)!important;}' +
-    'ces-messenger.chat-open{width:auto!important;height:auto!important;' +
-    'overflow:visible!important;transform:none!important;}';
-  document.head.appendChild(fixStyle);
-  window.addEventListener('ces-chat-open-changed', function (e) {
-    var cesm = document.querySelector('ces-messenger');
-    if (!cesm) return;
-    if (e.detail && e.detail.isOpen) cesm.classList.add('chat-open');
-    else cesm.classList.remove('chat-open');
-  });
 }
 
 window.addEventListener('ces-messenger-loaded', () => {
@@ -218,17 +106,28 @@ window.addEventListener('ces-end-session', (event) => {
   }
 });
 
+// On chat open/close:
+//   - Toggle .chat-open class so src/index.css can release the
+//     bubble-area constraint and let the chat panel expand. See the
+//     workaround comment in src/index.css for why the constraint is
+//     there in the first place.
+//   - On close, clean up the CES session so the next open is a fresh
+//     state (no carry-over messages, no leaked websocket).
 window.addEventListener('ces-chat-open-changed', (event) => {
   const cesm = document.querySelector('ces-messenger');
-  if (!event.detail.isOpen) {
-    try {
-      cesm.endSession();
-      const p1 = cesm.disconnectWebStream('USER_REQUESTED');
-      if (p1 && p1.catch) p1.catch((e) => console.error(e));
-      const p2 = cesm.clearStorage();
-      if (p2 && p2.catch) p2.catch((e) => console.error(e));
-    } catch (e) {
-      console.error("Error during chat close:", e);
-    }
+  if (!cesm) return;
+  if (event.detail?.isOpen) {
+    cesm.classList.add('chat-open');
+    return;
+  }
+  cesm.classList.remove('chat-open');
+  try {
+    cesm.endSession();
+    const p1 = cesm.disconnectWebStream('USER_REQUESTED');
+    if (p1 && p1.catch) p1.catch((e) => console.error(e));
+    const p2 = cesm.clearStorage();
+    if (p2 && p2.catch) p2.catch((e) => console.error(e));
+  } catch (e) {
+    console.error("Error during chat close:", e);
   }
 });

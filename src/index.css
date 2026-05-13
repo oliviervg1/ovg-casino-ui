@@ -160,7 +160,21 @@
 
 /* CES messenger: theme/route-aware position. The custom element lives at the
    bottom-right by default; on game pages we move it bottom-left so it doesn't
-   overlap the primary action ThemedButton. */
+   overlap the primary action ThemedButton.
+
+   The width/height/overflow/transform block is a workaround for a CES
+   defect on Chrome Android: the widget's shadow DOM contains a
+   position:fixed child that escapes the host's bounding box and causes
+   `document.elementFromPoint()` to return <ces-messenger> for every point
+   on the viewport, blocking taps on every other UI element. Forcing a
+   144px host box (slightly larger than the bubble's visible footprint),
+   `transform: translateZ(0)` to make the host a containing block for the
+   shadow's fixed children, and `overflow: hidden` to clip them, restores
+   normal hit-testing. The .chat-open class (toggled in public/ces-init.js
+   off the ces-chat-open-changed event the widget already dispatches)
+   removes the constraint so the chat panel can expand normally on tap.
+   Verified necessary in commits 826fcf0, b7c208a, 29bfb43; ?natural-ces=1
+   confirmed the bug is in CES, not in our position-fixed override. */
 ces-messenger {
   /* Use !important so we win against any inline style the element sets on itself
      after upgrade. Visual-only — does not affect the element's behaviour. */
@@ -170,6 +184,16 @@ ces-messenger {
   left: auto !important;
   z-index: 60;
   transition: right 250ms ease, left 250ms ease;
+  width: 144px !important;
+  height: 144px !important;
+  overflow: hidden !important;
+  transform: translateZ(0) !important;
+}
+ces-messenger.chat-open {
+  width: auto !important;
+  height: auto !important;
+  overflow: visible !important;
+  transform: none !important;
 }
 :root[data-route="game"] ces-messenger {
   right: auto !important;
