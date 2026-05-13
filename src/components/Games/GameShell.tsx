@@ -1,7 +1,6 @@
-import { type ReactNode, useRef, useEffect } from 'react';
+import { type ReactNode, useRef } from 'react';
 import { useAssets } from '../../hooks/useAssets';
-import { useMusic } from '../../hooks/useMusic';
-import { useAudioControls, type NowPlayingGameType } from '../../contexts/AudioControlsContext';
+import { useThemedMusic } from '../../hooks/useThemedMusic';
 import { ThemedButton } from '../Themed/ThemedButton';
 import { ThemedSkeleton } from '../Themed/ThemedSkeleton';
 import { ThemedCelebration } from '../Themed/ThemedCelebration';
@@ -28,34 +27,8 @@ export interface GameShellProps {
 
 export function GameShell(props: GameShellProps) {
   const { assets, loading: assetsLoading } = useAssets([props.bgKey, ...props.extraAssetKeys]);
-  const { musicUrl, loading: musicLoading } = useMusic(props.theme, props.gameType);
-  const { muted, setNowPlaying } = useAudioControls();
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { audioRef, musicLoading } = useThemedMusic(props.theme, props.gameType);
   const surfaceRef = useRef<HTMLDivElement | null>(null);
-
-  // Register what's playing for the header MusicPill while this shell is mounted.
-  useEffect(() => {
-    setNowPlaying({ theme: props.theme, gameType: props.gameType as NowPlayingGameType });
-    return () => setNowPlaying(null);
-  }, [props.theme, props.gameType, setNowPlaying]);
-
-  useEffect(() => {
-    if (audioRef.current && musicUrl) {
-      audioRef.current.src = musicUrl;
-      audioRef.current.loop = true;
-      audioRef.current.volume = 0.4;
-      audioRef.current.play()?.catch(() => { /* user-gesture required */ });
-    }
-    // `muted` is intentionally NOT in deps — the dedicated mute effect below owns it
-    // so toggling mute does not re-assign src and restart playback.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [musicUrl]);
-
-  // Apply mute changes immediately to a playing audio element. Runs on mount too,
-  // so initial-mount mute state is established here, not in the load effect.
-  useEffect(() => {
-    if (audioRef.current) audioRef.current.muted = muted;
-  }, [muted]);
 
   const loading = assetsLoading || musicLoading;
 

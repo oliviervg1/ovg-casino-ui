@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useAssets } from '../hooks/useAssets';
-import { useMusic } from '../hooks/useMusic';
-import { useAudioControls } from '../contexts/AudioControlsContext';
+import { useThemedMusic } from '../hooks/useThemedMusic';
 import { themeManifesto, THEME_NAMES, type ThemeType } from '../utils/themeManifesto';
 import { GAME_REGISTRY } from '../config/games';
 import { ThemedCard } from './Themed/ThemedCard';
@@ -15,7 +14,6 @@ function isThemeType(s: string | undefined): s is ThemeType {
 export function WorldPage() {
   const { theme: themeParam } = useParams<{ theme: string }>();
   const navigate = useNavigate();
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   if (!isThemeType(themeParam)) {
     return (
@@ -30,12 +28,9 @@ export function WorldPage() {
   const theme = themeParam;
   const m = themeManifesto[theme];
 
-  const { muted, setNowPlaying } = useAudioControls();
-
-  useEffect(() => {
-    setNowPlaying({ theme, gameType: 'world' });
-    return () => setNowPlaying(null);
-  }, [theme, setNowPlaying]);
+  // Auto-plays the themed Lyria 'world' track — distinct from the per-game-type
+  // tracks (more upbeat); the world tracks are ambient/exploratory for browsing.
+  const { audioRef } = useThemedMusic(theme, 'world');
 
   // Asset keys for this world: hero bg + 3 game pictograms.
   const assetKeys = useMemo(
@@ -44,25 +39,6 @@ export function WorldPage() {
   );
   const { assets } = useAssets(assetKeys);
   const bgUrl = assets[`bg_slots_${theme}`];
-
-  // Auto-play the themed Lyria 'world' track for this page — distinct
-  // from the per-game-type tracks (which are more upbeat); the world
-  // tracks are ambient/exploratory for browsing the 3 games.
-  const { musicUrl } = useMusic(theme, 'world');
-  useEffect(() => {
-    if (audioRef.current && musicUrl) {
-      audioRef.current.src = musicUrl;
-      audioRef.current.loop = true;
-      audioRef.current.volume = 0.4;
-      audioRef.current.play()?.catch(() => { /* autoplay blocked — user gesture required, OK */ });
-    }
-  }, [musicUrl]);
-
-  // Apply mute changes immediately to a playing audio element. Runs on mount too,
-  // so initial-mount mute state is established here, not in the load effect.
-  useEffect(() => {
-    if (audioRef.current) audioRef.current.muted = muted;
-  }, [muted]);
 
   const games = GAME_REGISTRY.filter(g => g.theme === theme);
 
