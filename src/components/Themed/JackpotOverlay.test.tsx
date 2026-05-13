@@ -36,8 +36,17 @@ describe('JackpotOverlay', () => {
   it('clicking a child does NOT dismiss', () => {
     const onDismiss = vi.fn();
     const { getByTestId } = render(<JackpotOverlay amount={500} theme="sweets" onDismiss={onDismiss} />);
-    const label = getByTestId('jackpot-label');
-    fireEvent.click(label);
+    // Inner card content lives inside ThemedCelebrationCard now; clicking it must not bubble a dismiss.
+    const cardContent = getByTestId('celebration-card-content');
+    fireEvent.click(cardContent);
     expect(onDismiss).not.toHaveBeenCalled();
+  });
+
+  it('does NOT pass pointer-events-none to the card (would let card-body clicks pass through to backdrop in real browsers)', () => {
+    // Structural regression test: jsdom can't reproduce the click-through bug
+    // (synthetic fireEvent.click ignores CSS pointer-events). Lock the intent here.
+    const { getByTestId } = render(<JackpotOverlay amount={1000} theme="sweets" onDismiss={vi.fn()} />);
+    const card = getByTestId('celebration-card-jackpot');
+    expect(card.className).not.toContain('pointer-events-none');
   });
 });
