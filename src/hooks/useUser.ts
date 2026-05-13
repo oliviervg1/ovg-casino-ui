@@ -10,7 +10,6 @@ export interface UserProfile {
   displayName: string;
   photoURL: string;
   balance: number;
-  theme: 'light' | 'dark';
 }
 
 export function useUser() {
@@ -48,7 +47,6 @@ export function useUser() {
             displayName: currentUser.displayName || 'Player',
             photoURL: currentUser.photoURL || '',
             balance: 1000,
-            theme: 'dark'
           };
           await setDoc(userRef, newProfile);
         }
@@ -117,14 +115,5 @@ export function useUser() {
     }
   };
 
-  const updateTheme = async (theme: 'light' | 'dark') => {
-    if (!user) return;
-    try {
-      await updateDoc(doc(db, 'users', user.uid), { theme });
-    } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `users/${user.uid}`);
-    }
-  };
-
-  return { user, profile, loading, isLoggingIn, loginError, login, logout, updateBalance, updateTheme };
+  return { user, profile, loading, isLoggingIn, loginError, login, logout, updateBalance };
 }

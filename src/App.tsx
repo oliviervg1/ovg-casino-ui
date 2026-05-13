@@ -55,7 +55,7 @@ function GameRouteWrapper() {
 }
 
 function AppContent() {
-  const { user, profile, loading, isLoggingIn, loginError, login, logout, updateTheme } = useUser();
+  const { user, profile, loading, isLoggingIn, loginError, login, logout } = useUser();
   const location = useLocation();
   const navigate = useNavigate();
   const [hasKey, setHasKey] = useState(true);
@@ -204,7 +204,7 @@ function AppContent() {
             } />
             <Route path="/profile" element={
               <motion.div className="flex-1 flex flex-col" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
-                <Profile profile={profile} onBack={() => navigate('/')} onLogout={logout} onUpdateTheme={updateTheme} />
+                <Profile profile={profile} onBack={() => navigate('/')} onLogout={logout} />
               </motion.div>
             } />
             <Route path="/faq/:categoryId?" element={

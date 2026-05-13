@@ -13,7 +13,6 @@ service cloud.firestore {
     //   - displayName: string (optional) - The user's display name
     //   - photoURL: string (optional) - The user's profile photo URL
     //   - balance: number (required) - The user's virtual balance
-    //   - theme: string (required) - The user's preferred theme ('light' or 'dark')
     //
     // Collection: regen_quota
     // Document ID: {uid}
@@ -57,16 +56,15 @@ service cloud.firestore {
     
     function isValidUser() {
       let data = request.resource.data;
-      let hasRequired = hasRequiredFields(['uid', 'email', 'balance', 'theme']);
+      let hasRequired = hasRequiredFields(['uid', 'email', 'balance']);
       let validUid = data.uid is string && data.uid.size() > 0 && data.uid.size() < 100;
       let validEmail = isValidEmail(data.email) && data.email.size() < 255;
       let validBalance = data.balance is number && data.balance >= 0;
-      let validTheme = data.theme == 'light' || data.theme == 'dark';
-      
+
       let validDisplayName = !('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100);
       let validPhotoURL = !('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 2048);
-      
-      return hasRequired && validUid && validEmail && validBalance && validTheme && validDisplayName && validPhotoURL;
+
+      return hasRequired && validUid && validEmail && validBalance && validDisplayName && validPhotoURL;
     }
 
     // ===============================================================

@@ -13,7 +13,6 @@ const profile: UserProfile = {
   displayName: 'Player One',
   photoURL: '',
   balance: 1234,
-  theme: 'dark',
 };
 
 function NowPlayingSetter() {

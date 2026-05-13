@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, User as UserIcon, LogOut, Wallet, Palette, RefreshCw } from 'lucide-react';
+import { ArrowLeft, User as UserIcon, LogOut, Wallet, RefreshCw } from 'lucide-react';
 import { UserProfile } from '../hooks/useUser';
 import { useBatchRegenerate } from '../hooks/useBatchRegenerate';
 
@@ -8,10 +8,9 @@ interface ProfileProps {
   profile: UserProfile;
   onBack: () => void;
   onLogout: () => void;
-  onUpdateTheme: (theme: 'light' | 'dark') => void;
 }
 
-export function Profile({ profile, onBack, onLogout, onUpdateTheme }: ProfileProps) {
+export function Profile({ profile, onBack, onLogout }: ProfileProps) {
   const { start: handleRegenerateAssets, isRegenerating, status: regenStatus, error: regenError } = useBatchRegenerate();
 
   return (
@@ -33,7 +32,7 @@ export function Profile({ profile, onBack, onLogout, onUpdateTheme }: ProfilePro
           <p className="opacity-70 text-lg">{profile.email}</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+        <div className="max-w-md mx-auto mb-10">
           <div className="bg-theme-bg p-6 rounded-2xl border border-white/10 flex items-center gap-4">
             <div className="p-4 bg-green-500/20 rounded-xl text-green-400">
               <Wallet className="w-8 h-8" />
@@ -41,27 +40,6 @@ export function Profile({ profile, onBack, onLogout, onUpdateTheme }: ProfilePro
             <div>
               <p className="text-sm opacity-70 uppercase tracking-wider font-bold mb-1">Current Balance</p>
               <p className="text-3xl font-mono font-bold text-green-400">${profile.balance.toLocaleString()}</p>
-            </div>
-          </div>
-
-          <div className="bg-theme-bg p-6 rounded-2xl border border-white/10 flex flex-col justify-center">
-            <div className="flex items-center gap-3 mb-4">
-              <Palette className="w-5 h-5 opacity-70" />
-              <p className="text-sm opacity-70 uppercase tracking-wider font-bold">Preferred Theme</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => onUpdateTheme('light')}
-                className={`flex-1 py-2 rounded-lg font-bold tracking-wider text-xl transition-all ${profile.theme === 'light' ? 'bg-pink-500 text-white shadow-lg' : 'bg-white/5 hover:bg-white/10'}`}
-              >
-                Light
-              </button>
-              <button
-                onClick={() => onUpdateTheme('dark')}
-                className={`flex-1 py-2 rounded-lg font-bold tracking-wider text-xl transition-all ${profile.theme === 'dark' ? 'bg-slate-800 text-white shadow-lg' : 'bg-white/5 hover:bg-white/10'}`}
-              >
-                Dark
-              </button>
             </div>
           </div>
         </div>
