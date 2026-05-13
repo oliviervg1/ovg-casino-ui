@@ -27,11 +27,9 @@ const renderSlots = (overrides: Partial<React.ComponentProps<typeof Slots>> = {}
     <AudioControlsProvider>
       <CelebrationProvider>
         <Slots
-          name="Sweet Line"
           theme="sweets"
           balance={100}
           onUpdateBalance={vi.fn()}
-          onBack={vi.fn()}
           {...overrides}
         />
       </CelebrationProvider>

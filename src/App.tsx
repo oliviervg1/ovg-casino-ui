@@ -39,16 +39,16 @@ function GameRouteWrapper() {
     return <div>Game not found</div>;
   }
 
-  const { type, theme, name } = gameDef;
+  const { type, theme } = gameDef;
 
   if (type === 'roulette') {
-    return <Roulette name={name} theme={theme} balance={profile.balance} onUpdateBalance={updateBalance} onBack={() => navigate('/')} />;
+    return <Roulette theme={theme} balance={profile.balance} onUpdateBalance={updateBalance} />;
   }
   if (type === 'slots') {
-    return <Slots name={name} theme={theme} balance={profile.balance} onUpdateBalance={updateBalance} onBack={() => navigate('/')} />;
+    return <Slots theme={theme} balance={profile.balance} onUpdateBalance={updateBalance} />;
   }
   if (type === 'bingo') {
-    return <Bingo name={name} theme={theme} balance={profile.balance} onUpdateBalance={updateBalance} onBack={() => navigate('/')} />;
+    return <Bingo theme={theme} balance={profile.balance} onUpdateBalance={updateBalance} />;
   }
 
   return <div>Game not found</div>;

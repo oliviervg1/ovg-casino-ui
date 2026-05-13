@@ -26,11 +26,9 @@ const renderBingo = (overrides: Partial<React.ComponentProps<typeof Bingo>> = {}
     <AudioControlsProvider>
       <CelebrationProvider>
         <Bingo
-          name="Sweet Bingo"
           theme="sweets"
           balance={100}
           onUpdateBalance={vi.fn()}
-          onBack={vi.fn()}
           {...overrides}
         />
       </CelebrationProvider>

@@ -10,7 +10,6 @@ import { GameStatusLine } from './GameStatusLine';
 import type { ThemeType } from '../../utils/themeManifesto';
 
 export interface GameShellProps {
-  name: string;
   theme: ThemeType;
   bgKey: string;
   extraAssetKeys: string[];
@@ -24,9 +23,6 @@ export interface GameShellProps {
   playDisabled: boolean;
   message: string | null;
   balance: number;
-  /** @deprecated GameShell no longer renders a back button (now in AppHeader).
-   *  Kept in props so existing call sites in Slots/Roulette/Bingo don't need updates. */
-  onBack: () => void;
   children: ReactNode;
 }
 

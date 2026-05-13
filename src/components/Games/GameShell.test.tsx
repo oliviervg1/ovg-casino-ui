@@ -20,7 +20,6 @@ function Providers({ children }: { children: ReactNode }) {
 
 describe('GameShell', () => {
   const baseProps = {
-    name: 'Roulette',
     theme: 'sweets' as const,
     bgKey: 'bg_test',
     extraAssetKeys: [] as string[],
@@ -34,7 +33,6 @@ describe('GameShell', () => {
     playDisabled: false,
     message: null,
     balance: 100,
-    onBack: vi.fn(),
   };
 
   const renderShell = (overrides: Partial<ComponentProps<typeof GameShell>> = {}) => {
@@ -129,12 +127,11 @@ describe('GameShellProps typing', () => {
 
 describe('GameShell celebration integration', () => {
   const baseProps: GameShellProps = {
-    name: 'Test', theme: 'sweets', bgKey: 'bg_test',
+    theme: 'sweets', bgKey: 'bg_test',
     extraAssetKeys: [], gameType: 'slots',
     win: null, lastPayout: null,
     bet: 10, onBet: () => {}, onPlay: () => {}, playLabel: 'PLAY',
     playDisabled: false, message: null, balance: 1000,
-    onBack: () => {},
     children: <div>game</div>,
   };
 

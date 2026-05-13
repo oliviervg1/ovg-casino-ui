@@ -6,11 +6,9 @@ import { useSlotsGame } from '../../hooks/useSlotsGame';
 import { type ThemeType } from '../../utils/themeManifesto';
 
 interface Props {
-  name: string;
   theme: ThemeType;
   balance: number;
   onUpdateBalance: (delta: number) => void;
-  onBack: () => void;
 }
 
 const FALLBACK_SYMBOLS_MAP: Record<ThemeType, string[]> = {
@@ -24,7 +22,7 @@ const FALLBACK_SYMBOLS_MAP: Record<ThemeType, string[]> = {
   ninja: ['🥷', '🗡️', '🌸', '🏯'],
 };
 
-export function Slots({ name, theme, balance, onUpdateBalance, onBack }: Props) {
+export function Slots({ theme, balance, onUpdateBalance }: Props) {
   const symbolKeys = useMemo(() => [1, 2, 3, 4].map(n => `${theme}_${n}`), [theme]);
   const extraAssetKeys = useMemo(() => [`slots_${theme}`, ...symbolKeys], [theme, symbolKeys]);
   const { assets } = useAssets(symbolKeys);
@@ -39,7 +37,6 @@ export function Slots({ name, theme, balance, onUpdateBalance, onBack }: Props) 
 
   return (
     <GameShell
-      name={name}
       theme={theme}
       bgKey={`bg_slots_${theme}`}
       extraAssetKeys={extraAssetKeys}
@@ -53,7 +50,6 @@ export function Slots({ name, theme, balance, onUpdateBalance, onBack }: Props) 
       playDisabled={game.spinning || balance < game.bet}
       message={game.message}
       balance={balance}
-      onBack={onBack}
     >
       <SlotMachine theme={theme} game={game} symbols={symbols} />
     </GameShell>

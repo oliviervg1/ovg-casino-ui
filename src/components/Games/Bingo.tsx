@@ -4,19 +4,16 @@ import { BingoSurface } from './Bingo/BingoSurface';
 import { type ThemeType } from '../../utils/themeManifesto';
 
 interface Props {
-  name: string;
   theme: ThemeType;
   balance: number;
   onUpdateBalance: (delta: number) => void;
-  onBack: () => void;
 }
 
-export function Bingo({ name, theme, balance, onUpdateBalance, onBack }: Props) {
+export function Bingo({ theme, balance, onUpdateBalance }: Props) {
   const game = useBingoGame({ theme, balance, onUpdateBalance });
 
   return (
     <GameShell
-      name={name}
       theme={theme}
       bgKey={`bg_bingo_${theme}`}
       extraAssetKeys={[`bingo_${theme}`]}
@@ -30,7 +27,6 @@ export function Bingo({ name, theme, balance, onUpdateBalance, onBack }: Props) 
       playDisabled={game.drawing || balance < game.bet}
       message={game.message}
       balance={balance}
-      onBack={onBack}
     >
       <BingoSurface theme={theme} game={game} />
     </GameShell>

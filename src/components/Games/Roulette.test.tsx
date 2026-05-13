@@ -21,11 +21,9 @@ const renderRoulette = (overrides: Partial<React.ComponentProps<typeof Roulette>
     <AudioControlsProvider>
       <CelebrationProvider>
         <Roulette
-          name="Sweet Spin"
           theme="sweets"
           balance={100}
           onUpdateBalance={vi.fn()}
-          onBack={vi.fn()}
           {...overrides}
         />
       </CelebrationProvider>
