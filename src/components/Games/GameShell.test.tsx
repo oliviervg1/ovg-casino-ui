@@ -176,4 +176,14 @@ describe('GameShell celebration integration', () => {
     ));
     expect(container.textContent).toContain('Empty wrapper.');
   });
+
+  it("the message line is visually hidden via sr-only (screen reader only)", () => {
+    render(withProvider(
+      <GameShell {...baseProps} message="Won 20!" win="small" lastPayout={20}>
+        <div>game</div>
+      </GameShell>
+    ));
+    const msgEl = screen.getByText('Won 20!');
+    expect(msgEl.className).toContain('sr-only');
+  });
 });

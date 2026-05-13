@@ -94,7 +94,7 @@ export function GameShell(props: GameShellProps) {
             </ThemedButton>
           </div>
           <GameStatusLine isLoading={loading} />
-          {props.message && <p aria-live="polite" role="status" className="text-center text-sm opacity-90">{props.message}</p>}
+          {props.message && <p aria-live="polite" role="status" className="sr-only">{props.message}</p>}
         </div>
 
         <ThemedCelebration
