@@ -100,7 +100,6 @@ export function GameShell(props: GameShellProps) {
         <ThemedCelebration
           tier={props.win}
           amount={props.lastPayout}
-          message={props.message}
           theme={props.theme}
           surfaceRef={surfaceRef}
         />

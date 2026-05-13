@@ -8,7 +8,6 @@ import { LossPlate } from './LossPlate';
 export interface ThemedCelebrationProps {
   tier: 'jackpot' | 'small' | 'loss' | null;
   amount: number | null;
-  message: string | null;
   theme: ThemeType;
   surfaceRef: React.RefObject<HTMLDivElement | null>;
 }

@@ -19,7 +19,7 @@ function Harness({ tier, amount }: { tier: 'jackpot' | 'small' | 'loss' | null; 
   return (
     <CelebrationProvider>
       <div ref={ref} />
-      <ThemedCelebration tier={tier} amount={amount} message="msg" theme="sweets" surfaceRef={ref} />
+      <ThemedCelebration tier={tier} amount={amount} theme="sweets" surfaceRef={ref} />
       <Probe onState={() => {}} />
     </CelebrationProvider>
   );
@@ -57,7 +57,7 @@ describe('ThemedCelebration', () => {
     function ProbeHarness() {
       return (
         <CelebrationProvider>
-          <ThemedCelebration tier="small" amount={30} message="m" theme="sweets" surfaceRef={ref as React.RefObject<HTMLDivElement | null>} />
+          <ThemedCelebration tier="small" amount={30} theme="sweets" surfaceRef={ref as React.RefObject<HTMLDivElement | null>} />
           <Probe onState={(s) => { observed = s; }} />
         </CelebrationProvider>
       );
@@ -72,7 +72,7 @@ describe('ThemedCelebration', () => {
     function ProbeHarness() {
       return (
         <CelebrationProvider>
-          <ThemedCelebration tier="jackpot" amount={500} message="m" theme="sweets" surfaceRef={ref as React.RefObject<HTMLDivElement | null>} />
+          <ThemedCelebration tier="jackpot" amount={500} theme="sweets" surfaceRef={ref as React.RefObject<HTMLDivElement | null>} />
           <Probe onState={(s) => { observed = s; }} />
         </CelebrationProvider>
       );
@@ -87,7 +87,7 @@ describe('ThemedCelebration', () => {
     function ProbeHarness() {
       return (
         <CelebrationProvider>
-          <ThemedCelebration tier="loss" amount={0} message="m" theme="sweets" surfaceRef={ref as React.RefObject<HTMLDivElement | null>} />
+          <ThemedCelebration tier="loss" amount={0} theme="sweets" surfaceRef={ref as React.RefObject<HTMLDivElement | null>} />
           <Probe onState={(s) => { observed = s; }} />
         </CelebrationProvider>
       );

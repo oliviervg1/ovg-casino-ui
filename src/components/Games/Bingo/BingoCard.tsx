@@ -25,7 +25,7 @@ export function BingoCard({ theme, board, drawn, lastDrawn, lines, win = null }:
     <div
       data-testid="bingo-card"
       data-theme={theme}
-      className="relative w-full max-w-[42vh] mx-auto overflow-hidden"
+      className="relative w-full max-w-[42vh] mx-auto overflow-hidden rounded-2xl"
     >
       <div className="grid grid-cols-3 gap-[1vh] md:gap-[2vh] bg-theme-bg/80 p-[2vh] md:p-[3vh] rounded-2xl shadow-[inset_0_0_30px_rgba(0,0,0,0.5)] border-[0.6vh] border-theme-primary">
         {board.map((row, i) =>

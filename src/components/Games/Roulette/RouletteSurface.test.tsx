@@ -30,12 +30,12 @@ describe('RouletteSurface', () => {
   });
 
   it('renders the result strip when resultNum is set', () => {
-    render(<RouletteSurface theme="sweets" game={{ ...baseGame, resultNum: 17, resultColour: 'black', message: 'Landed on 17 (black). Better luck next time.' }} />);
+    render(<RouletteSurface theme="sweets" game={{ ...baseGame, resultNum: 17, resultColour: 'black' }} />);
     expect(screen.getByTestId('result-strip')).toBeTruthy();
   });
 
   it('cone shows resultNum when set', () => {
-    render(<RouletteSurface theme="sweets" game={{ ...baseGame, resultNum: 7, resultColour: 'red', message: 'Won 20!' }} />);
+    render(<RouletteSurface theme="sweets" game={{ ...baseGame, resultNum: 7, resultColour: 'red' }} />);
     expect(screen.getByTestId('roulette-cone').textContent).toContain('7');
   });
 });
