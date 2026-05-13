@@ -28,6 +28,21 @@ Browser ──► Cloud Run (Express + React static)
 
 GCS bucket is private. Browsers receive 1-hour V4 signed URLs and load assets directly from GCS. The Gemini key lives in Secret Manager and is mounted by Cloud Run as `$GEMINI_API_KEY`. See `docs/ARCHITECTURE.md` for the full request-flow walkthrough.
 
+## The redesign story
+
+The pitch is "AI-generated themed casino worlds powered by Gemini 3.1 + Lyria 3" — Gemini draws per-theme image assets and Lyria composes per-theme music for **eight worlds** (sweets, egypt, space, west, ocean, jungle, vampire, ninja) across **three games** (slots, roulette, bingo). The original chrome was generic — every theme reused the same surfaces with a colour swap. A six-plan rework brought every game surface, header, motion, and celebration into the same per-theme bespoke vocabulary as the AI assets:
+
+1. **Foundation + Lobby** — design tokens (`themeManifesto`), themed atoms (button / card / skeleton), `LobbyGrid` with per-world cards.
+2. **Game-page chrome** — `AppHeader` + `BalancePill` + `MusicPill` + `MenuDropdown` + `BetControl` + `GameShell`.
+3. **Slots surface** — themed chassis + reels + payline + LED bar + symbol-asset wiring with emoji fallback.
+4. **Roulette surface** — themed wheel with hook-driven rotation accumulator + segments + bet table + result strip.
+5. **Bingo surface** — themed card + cells + markers + JUST CALLED panel + LINES tracker + BINGO! sweep banner.
+6. **Themed celebration system** — per-theme particle pools + copy strings + a shared `ThemedCelebrationCard` base driving `JackpotOverlay` (full-screen takeover), `SmallWinCard` (mid-surface card with backdrop-blur), and `LossPlate` (subtle bottom plate + per-theme surface wiggle); BalancePill ticks in lockstep with the win counter.
+
+Plus a post-deploy cleanup batch that collapsed win-message duplication and ten follow-up commits for browser-pass-discovered bugs.
+
+For the engineering history (atoms catalog, what shipped per plan, deferred items, lessons) see `docs/REDESIGN_HISTORY.md`.
+
 ## Local development
 
 Prerequisites: Node 22+, a Firebase project (Auth + Firestore enabled), a Gemini API key.
@@ -80,8 +95,9 @@ All env vars documented in `.env.example` (local + server) and `deploy/.env.depl
 
 - `src/` — React client (Vite-built)
 - `server/` — Express server (TypeScript-built to `dist-server/`)
+- `public/` — static assets served as-is (CES messenger init, etc.)
 - `deploy/` — Cloud Build + deploy script
-- `docs/` — architecture and security notes
+- `docs/` — architecture, security, redesign-history notes
 - `firestore.rules` — Firestore security rules
 
-See `docs/ARCHITECTURE.md` and `docs/SECURITY.md` for design and threat-model notes.
+See `docs/ARCHITECTURE.md` and `docs/SECURITY.md` for design and threat-model notes; `docs/REDESIGN_HISTORY.md` for the themed-immersive redesign history (6-plan rework + cleanup).
