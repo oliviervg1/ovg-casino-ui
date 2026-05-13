@@ -80,9 +80,13 @@ if (location.search.includes('no-ces')) {
   if (document.body) ensureToast();
   else document.addEventListener('DOMContentLoaded', ensureToast);
 } else if (location.search.includes('fix-ces')) {
+  // Bubble is rendered at ~128px (icon + circular background), so the host
+  // box needs to be at least that big or overflow:hidden clips it. 144px
+  // gives a small margin without making the hit-area noticeably wider than
+  // the bubble itself.
   var fixStyle = document.createElement('style');
   fixStyle.textContent =
-    'ces-messenger{width:64px!important;height:64px!important;' +
+    'ces-messenger{width:144px!important;height:144px!important;' +
     'overflow:hidden!important;transform:translateZ(0)!important;}' +
     'ces-messenger.chat-open{width:auto!important;height:auto!important;' +
     'overflow:visible!important;transform:none!important;}';
