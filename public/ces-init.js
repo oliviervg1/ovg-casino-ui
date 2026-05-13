@@ -5,8 +5,17 @@
 //                 element is small, ~bubble-sized — so the blocker is
 //                 something CES is injecting elsewhere)
 //   ?diag-tap=1 — tap-tracker. Shows a toast on every touchstart with
-//                 the element that received it. Reveals what's actually
-//                 capturing taps when buttons feel dead.
+//                 the element that received it. Confirmed:
+//                 elementFromPoint returns CES-MESSENGER for ANY point
+//                 on the viewport, even though the host's outline is
+//                 small. → CES shadow DOM has a position:fixed child
+//                 that escapes the host's box and hijacks hit-testing.
+//   ?fix-ces=1  — candidate fix: constrain the host to a 64x64 bubble
+//                 box with transform (creates containing block for the
+//                 shadow's fixed children) + overflow:hidden (clips
+//                 them). Toggles a .chat-open class on the host when
+//                 CES dispatches ces-chat-open-changed so the panel
+//                 can expand normally on tap.
 if (location.search.includes('no-ces')) {
   var diagStyleHide = document.createElement('style');
   diagStyleHide.textContent = 'ces-messenger{display:none!important}';
@@ -70,6 +79,20 @@ if (location.search.includes('no-ces')) {
   // Mount the toast as soon as body exists.
   if (document.body) ensureToast();
   else document.addEventListener('DOMContentLoaded', ensureToast);
+} else if (location.search.includes('fix-ces')) {
+  var fixStyle = document.createElement('style');
+  fixStyle.textContent =
+    'ces-messenger{width:64px!important;height:64px!important;' +
+    'overflow:hidden!important;transform:translateZ(0)!important;}' +
+    'ces-messenger.chat-open{width:auto!important;height:auto!important;' +
+    'overflow:visible!important;transform:none!important;}';
+  document.head.appendChild(fixStyle);
+  window.addEventListener('ces-chat-open-changed', function (e) {
+    var cesm = document.querySelector('ces-messenger');
+    if (!cesm) return;
+    if (e.detail && e.detail.isOpen) cesm.classList.add('chat-open');
+    else cesm.classList.remove('chat-open');
+  });
 }
 
 window.addEventListener('ces-messenger-loaded', () => {
