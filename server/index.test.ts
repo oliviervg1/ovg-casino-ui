@@ -63,6 +63,13 @@ describe('server bootstrap', () => {
     // worker-src is set so it falls back), so blob: must be allowlisted
     // or the worklet load aborts and voice chat fails to start.
     expect(csp).toMatch(/script-src[^;]*blob:/);
+    // CES Messenger compiles Handlebars templates at runtime (e.g. the
+    // game_carousel response template). Handlebars's runtime compiler
+    // builds executable code via the Function constructor, which Chrome
+    // treats as eval and blocks unless 'unsafe-eval' is in script-src —
+    // without it the messenger throws EvalError and the response render
+    // aborts.
+    expect(csp).toMatch(/script-src[^;]*'unsafe-eval'/);
     expect(csp).toMatch(/style-src[^;]*fonts\.googleapis\.com/);
     expect(csp).toMatch(/font-src[^;]*fonts\.gstatic\.com/);
     expect(csp).toMatch(/frame-ancestors\s+'none'/);

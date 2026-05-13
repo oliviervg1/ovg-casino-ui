@@ -56,7 +56,13 @@ export function createApp(): Express {
         // the worklet processor into a Blob and loads it via addModule(blob:URL),
         // which Chrome checks against script-src (no worker-src defined → falls back).
         // Same-origin Blob URLs only — page-created, not externally loadable.
-        scriptSrc: ["'self'", 'https://www.gstatic.com', 'https://cdn.jsdelivr.net', 'https://apis.google.com', 'blob:'],
+        // 'unsafe-eval' covers CES Messenger's runtime Handlebars compilation —
+        // Handlebars builds template renderers via the Function constructor,
+        // which Chrome treats as eval. Without it, response templates (e.g. the
+        // game_carousel) throw EvalError and the messenger fails mid-render. The
+        // app does not otherwise eval user input (prompts are server-side static
+        // maps), so the practical XSS surface added is small for the prototype.
+        scriptSrc: ["'self'", "'unsafe-eval'", 'https://www.gstatic.com', 'https://cdn.jsdelivr.net', 'https://apis.google.com', 'blob:'],
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
         objectSrc: ["'none'"],
