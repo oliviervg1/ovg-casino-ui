@@ -45,4 +45,19 @@ describe('BetTable', () => {
       expect(cell.hasAttribute('disabled')).toBe(true);
     }
   });
+
+  it('cell labels use fixed pixel font sizes (not vh) so BLACK fits at tall viewports', () => {
+    // vh-based font scales with viewport HEIGHT — at portrait viewports
+    // (e.g., 1471x1914), text-[2vh] resolves to ~38px which overflows the
+    // ~140px-wide cell at md+. Fixed pixel sizes decouple font from
+    // viewport height, keeping the label bounded regardless of orientation.
+    render(<BetTable bet={10} betType={null} onSelect={vi.fn()} disabled={false} />);
+    const cls = screen.getByTestId('bet-cell-black').className;
+    expect(cls).toContain('text-[11px]');
+    expect(cls).toContain('md:text-[14px]');
+    expect(cls).toContain('tracking-tight');
+    // whitespace-nowrap prevents the label from wrapping to a second line
+    // when px-[1vh] horizontal padding is large at tall viewports.
+    expect(cls).toContain('whitespace-nowrap');
+  });
 });
