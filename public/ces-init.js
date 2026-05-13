@@ -1,3 +1,12 @@
+// Diagnostic: hide CES messenger when ?no-ces=1 is in the URL. Lets us
+// isolate mobile-tap issues without shipping a CES-less build to everyone.
+// Remove once the mobile-tap investigation is closed.
+if (location.search.includes('no-ces')) {
+  var diagStyle = document.createElement('style');
+  diagStyle.textContent = 'ces-messenger{display:none!important}';
+  document.head.appendChild(diagStyle);
+}
+
 window.addEventListener('ces-messenger-loaded', () => {
   const cesMessenger = document.querySelector('ces-messenger');
 
