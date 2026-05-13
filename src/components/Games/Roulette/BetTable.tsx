@@ -1,6 +1,8 @@
 import { motion } from 'motion/react';
+import type { RouletteBetType } from '../gameLogic';
 
-export type BetType = 'red' | 'black' | 'even' | 'odd';
+// Re-export under the local name for back-compat with existing consumers.
+export type BetType = RouletteBetType;
 
 export interface BetTableProps {
   bet: number;

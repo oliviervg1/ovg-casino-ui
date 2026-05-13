@@ -1,12 +1,12 @@
 export type RouletteColour = 'red' | 'black' | 'green';
 
-export function evaluateRouletteBet(num: number, colour: RouletteColour, betType: string): boolean {
-  if (betType.startsWith('number-')) {
-    return Number(betType.slice('number-'.length)) === num;
-  }
-  if (betType === 'red' || betType === 'black' || betType === 'green') {
-    return betType === colour;
-  }
+/** The bet types BetTable exposes today. Single-pocket "number-N" bets and
+ *  green-only bets are not in the UI; if/when they're added, widen this
+ *  union and add the corresponding branches in evaluateRouletteBet. */
+export type RouletteBetType = 'red' | 'black' | 'even' | 'odd';
+
+export function evaluateRouletteBet(num: number, colour: RouletteColour, betType: RouletteBetType): boolean {
+  if (betType === 'red' || betType === 'black') return betType === colour;
   if (betType === 'even') return num !== 0 && num % 2 === 0;
   if (betType === 'odd') return num % 2 === 1;
   return false;

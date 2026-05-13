@@ -112,20 +112,4 @@ describe('useRouletteGame', () => {
     vi.resetModules();
   });
 
-  it("sets win='jackpot' + lastPayout=350 for single-number win (bet*35 with default bet=10)", async () => {
-    vi.doMock('../components/Games/gameLogic', async (orig) => {
-      const m = await orig<typeof import('../components/Games/gameLogic')>();
-      return { ...m, evaluateRouletteBet: () => true };
-    });
-    vi.resetModules();
-    const { useRouletteGame: hook } = await import('./useRouletteGame');
-    const { result } = renderHook(() => hook({ theme: 'sweets', balance: 1000, onUpdateBalance: vi.fn() }));
-    act(() => { result.current.setBetType('number-7'); });
-    act(() => { result.current.spin(); });
-    act(() => { vi.advanceTimersByTime(5000); });
-    expect(result.current.win).toBe('jackpot');
-    expect(result.current.lastPayout).toBe(350);
-    vi.doUnmock('../components/Games/gameLogic');
-    vi.resetModules();
-  });
 });

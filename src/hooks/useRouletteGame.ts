@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { angleOfPocket, evaluateRouletteBet, type RouletteColour } from '../components/Games/gameLogic';
+import { angleOfPocket, evaluateRouletteBet, type RouletteColour, type RouletteBetType } from '../components/Games/gameLogic';
 import { soundEngine } from '../utils/SoundEngine';
 import type { ThemeType } from '../utils/themeManifesto';
 
@@ -16,8 +16,8 @@ export interface UseRouletteGameOptions {
 export interface UseRouletteGameReturn {
   bet: number;
   setBet: (n: number) => void;
-  betType: string | null;
-  setBetType: (t: string | null) => void;
+  betType: RouletteBetType | null;
+  setBetType: (t: RouletteBetType | null) => void;
   spinning: boolean;
   /** Result pocket. null while spinning AND before any spin. Set at the end of each spin. */
   resultNum: number | null;
@@ -37,7 +37,7 @@ export interface UseRouletteGameReturn {
 export function useRouletteGame(opts: UseRouletteGameOptions): UseRouletteGameReturn {
   const { theme, balance, onUpdateBalance } = opts;
   const [bet, setBet] = useState(10);
-  const [betType, setBetType] = useState<string | null>(null);
+  const [betType, setBetType] = useState<RouletteBetType | null>(null);
   const [spinning, setSpinning] = useState(false);
   const [resultNum, setResultNum] = useState<number | null>(null);
   const [resultColour, setResultColour] = useState<RouletteColour | null>(null);
@@ -74,10 +74,12 @@ export function useRouletteGame(opts: UseRouletteGameOptions): UseRouletteGameRe
       setResultColour(colour);
       const won = evaluateRouletteBet(num, colour, betType);
       if (won) {
-        const payout = betType.startsWith('number-') ? bet * 35 : bet * 2;
+        const payout = bet * 2;
         onUpdateBalance?.(payout);
-        const tier: 'jackpot' | 'small' = payout >= bet * 10 ? 'jackpot' : 'small';
-        setWin(tier);
+        // Only red/black/even/odd bets are exposed today; all pay 2x → 'small'.
+        // If single-pocket "number-N" bets (35x → 'jackpot') are added, widen
+        // RouletteBetType in gameLogic.ts and re-introduce the tier branch.
+        setWin('small');
         setLastPayout(payout);
         setMessage(`Won ${payout}!`);
         soundEngine.playWin(theme);

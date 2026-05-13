@@ -2,9 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { evaluateRouletteBet, evaluateSlotsResult, evaluateBingoBoard, angleOfPocket } from './gameLogic';
 
 describe('evaluateRouletteBet', () => {
-  it('matches when betType is the chosen number', () => {
-    expect(evaluateRouletteBet(7, 'red', 'number-7')).toBe(true);
-  });
   it('matches when betType is the chosen colour', () => {
     expect(evaluateRouletteBet(7, 'red', 'red')).toBe(true);
     expect(evaluateRouletteBet(8, 'black', 'red')).toBe(false);
