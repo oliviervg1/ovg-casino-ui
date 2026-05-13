@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { renderHook, waitFor, act } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
 
 vi.mock('../lib/AssetManager', () => ({
   getAsset: vi.fn(async (k: string) => `https://signed/${k}`),

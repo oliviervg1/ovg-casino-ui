@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
-import { cleanup, render, act } from '@testing-library/react';
+import { cleanup, render } from '@testing-library/react';
 import { useRef } from 'react';
 import { ThemedCelebration } from './ThemedCelebration';
 import { CelebrationProvider, useCelebration } from '../../contexts/CelebrationContext';
@@ -52,47 +52,53 @@ describe('ThemedCelebration', () => {
   });
 
   it('pushes pendingTick={ delta:30, durationMs:600 } for small', () => {
-    let observed: { pendingTick: ReturnType<typeof useCelebration>['pendingTick'] } | null = null;
+    // Wrapper-object pattern: TS narrows closure-mutated `let` to its initial
+    // value; an object property bypasses that flow analysis.
+    const captured: { observed: { pendingTick: ReturnType<typeof useCelebration>['pendingTick'] } | null } = { observed: null };
     const ref = { current: null };
     function ProbeHarness() {
       return (
         <CelebrationProvider>
           <ThemedCelebration tier="small" amount={30} theme="sweets" surfaceRef={ref as React.RefObject<HTMLDivElement | null>} />
-          <Probe onState={(s) => { observed = s; }} />
+          <Probe onState={(s) => { captured.observed = s; }} />
         </CelebrationProvider>
       );
     }
     render(<ProbeHarness />);
-    expect(observed?.pendingTick).toEqual({ delta: 30, durationMs: 600 });
+    expect(captured.observed?.pendingTick).toEqual({ delta: 30, durationMs: 600 });
   });
 
   it('pushes pendingTick={ delta:500, durationMs:1200 } for jackpot', () => {
-    let observed: { pendingTick: ReturnType<typeof useCelebration>['pendingTick'] } | null = null;
+    // Wrapper-object pattern: TS narrows closure-mutated `let` to its initial
+    // value; an object property bypasses that flow analysis.
+    const captured: { observed: { pendingTick: ReturnType<typeof useCelebration>['pendingTick'] } | null } = { observed: null };
     const ref = { current: null };
     function ProbeHarness() {
       return (
         <CelebrationProvider>
           <ThemedCelebration tier="jackpot" amount={500} theme="sweets" surfaceRef={ref as React.RefObject<HTMLDivElement | null>} />
-          <Probe onState={(s) => { observed = s; }} />
+          <Probe onState={(s) => { captured.observed = s; }} />
         </CelebrationProvider>
       );
     }
     render(<ProbeHarness />);
-    expect(observed?.pendingTick).toEqual({ delta: 500, durationMs: 1200 });
+    expect(captured.observed?.pendingTick).toEqual({ delta: 500, durationMs: 1200 });
   });
 
   it('does NOT push pendingTick for loss', () => {
-    let observed: { pendingTick: ReturnType<typeof useCelebration>['pendingTick'] } | null = null;
+    // Wrapper-object pattern: TS narrows closure-mutated `let` to its initial
+    // value; an object property bypasses that flow analysis.
+    const captured: { observed: { pendingTick: ReturnType<typeof useCelebration>['pendingTick'] } | null } = { observed: null };
     const ref = { current: null };
     function ProbeHarness() {
       return (
         <CelebrationProvider>
           <ThemedCelebration tier="loss" amount={0} theme="sweets" surfaceRef={ref as React.RefObject<HTMLDivElement | null>} />
-          <Probe onState={(s) => { observed = s; }} />
+          <Probe onState={(s) => { captured.observed = s; }} />
         </CelebrationProvider>
       );
     }
     render(<ProbeHarness />);
-    expect(observed?.pendingTick).toBe(null);
+    expect(captured.observed?.pendingTick).toBe(null);
   });
 });

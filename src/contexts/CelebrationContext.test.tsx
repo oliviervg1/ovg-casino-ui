@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { cleanup, render, renderHook, act } from '@testing-library/react';
+import { cleanup, renderHook, act } from '@testing-library/react';
 import { CelebrationProvider, useCelebration } from './CelebrationContext';
 
 describe('CelebrationContext', () => {

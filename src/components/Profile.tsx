@@ -1,4 +1,3 @@
-import { motion } from 'motion/react';
 import { ArrowLeft, User as UserIcon, LogOut, Wallet, RefreshCw } from 'lucide-react';
 import { UserProfile } from '../hooks/useUser';
 import { useBatchRegenerate } from '../hooks/useBatchRegenerate';

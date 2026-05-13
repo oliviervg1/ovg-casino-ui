@@ -28,7 +28,6 @@ export type { ThemeType } from './utils/themeManifesto';
 
 function GameRouteWrapper() {
   const { gameId } = useParams<{ gameId: string }>();
-  const navigate = useNavigate();
   const { profile, updateBalance } = useUser();
 
   if (!profile || !gameId) return null;
