@@ -12,16 +12,21 @@ export function SmallWinCard({ amount, theme, onDismiss }: SmallWinCardProps) {
     <div
       data-testid="small-win-backdrop"
       aria-hidden="true"
-      className="absolute inset-0 z-30 flex items-center justify-center bg-black/30 backdrop-blur-md"
+      className="absolute inset-0 z-30 bg-black/30 backdrop-blur-md"
       onClick={(e) => { if (e.target === e.currentTarget) onDismiss(); }}
     >
-      <ThemedCelebrationCard
-        tier="small"
-        amount={amount}
-        theme={theme}
-        containerClass="relative"
-        onDismiss={onDismiss}
-      />
+      <div
+        data-testid="small-win-positioner"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-[80vw]"
+      >
+        <ThemedCelebrationCard
+          tier="small"
+          amount={amount}
+          theme={theme}
+          containerClass="relative"
+          onDismiss={onDismiss}
+        />
+      </div>
     </div>
   );
 }
