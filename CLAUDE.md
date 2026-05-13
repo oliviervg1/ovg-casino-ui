@@ -61,7 +61,7 @@ There are two rate-limit layers and the client treats them differently:
 
 Both error classes live in `src/lib/errors.ts` and are re-exported from both `AssetManager.ts` and `MusicManager.ts` so a single `instanceof` check works regardless of which manager rejected — do not re-introduce per-module duplicate classes.
 
-`src/hooks/useBatchRegenerate.ts` runs the Profile-page Regenerate-Assets batch through a worker pool capped at `REGEN_CONCURRENCY = 4` (the work list — `ASSET_KEYS` + `MUSIC_PAIRS` — is derived from `THEME_NAMES`, so adding a new theme grows the batch automatically). Each regenerate POST is one token, so the burst is bounded by 4 inflight against the 30/min generation limit and drains 105 tasks (81 image + 24 music) in ~3.5 min without 429s. Don't raise the cap without raising `RATE_LIMIT_RPM`.
+`src/hooks/useBatchRegenerate.ts` runs the Profile-page Regenerate-Assets batch through a worker pool capped at `REGEN_CONCURRENCY = 4` (the work list — `ASSET_KEYS` + `MUSIC_PAIRS` — is derived from `THEME_NAMES`, so adding a new theme grows the batch automatically). Each regenerate POST is one token, so the burst is bounded by 4 inflight against the 30/min generation limit and drains 113 tasks (81 image + 32 music) in ~3.8 min without 429s. Don't raise the cap without raising `RATE_LIMIT_RPM`.
 
 ### Server-side prompts are the keyspace
 
