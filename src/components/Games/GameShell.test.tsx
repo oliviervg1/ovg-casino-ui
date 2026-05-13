@@ -186,4 +186,18 @@ describe('GameShell celebration integration', () => {
     const msgEl = screen.getByText('Won 20!');
     expect(msgEl.className).toContain('sr-only');
   });
+
+  it('the BetControl + PLAY row is horizontally centered at md+ via justify-center', () => {
+    // At md+ the row is flex-row. items-center is the CROSS axis (vertical),
+    // so without justify-center the BetControl + button align to the start
+    // (left) of the row — visibly off-center within the centered max-w-2xl
+    // wrapper. Same root-cause class as the SmallWinCard mx-auto fix.
+    render(withProvider(
+      <GameShell {...baseProps}>
+        <div>game</div>
+      </GameShell>
+    ));
+    const row = screen.getByTestId('bet-row');
+    expect(row.className).toContain('justify-center');
+  });
 });

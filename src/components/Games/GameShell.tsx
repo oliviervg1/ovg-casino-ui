@@ -87,7 +87,7 @@ export function GameShell(props: GameShellProps) {
         </main>
 
         <div className="max-w-2xl w-full mx-auto mt-8 flex flex-col items-center gap-3">
-          <div className="flex flex-col md:flex-row items-center gap-4 w-full">
+          <div data-testid="bet-row" className="flex flex-col md:flex-row items-center justify-center gap-4 w-full">
             <BetControl value={props.bet} onChange={props.onBet} disabled={props.playDisabled} />
             <ThemedButton onClick={props.onPlay} disabled={props.playDisabled} size="hero">
               {props.playLabel}
