@@ -35,8 +35,9 @@ describe('ThemedCelebration', () => {
     expect(container.textContent).toBe('');
   });
 
-  it('renders SmallWinBanner for tier=small', () => {
-    const { container } = render(<Harness tier="small" amount={30} />);
+  it('renders SmallWinCard for tier=small', () => {
+    const { container, getByTestId } = render(<Harness tier="small" amount={30} />);
+    expect(getByTestId('small-win-backdrop')).toBeTruthy();
     expect(container.textContent).toContain('Sweet match!');
   });
 

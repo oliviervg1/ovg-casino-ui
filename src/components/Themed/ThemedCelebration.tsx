@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { ThemeType } from '../../utils/themeManifesto';
 import { useCelebration } from '../../contexts/CelebrationContext';
 import { JackpotOverlay } from './JackpotOverlay';
-import { SmallWinBanner } from './SmallWinBanner';
+import { SmallWinCard } from './SmallWinCard';
 import { LossPlate } from './LossPlate';
 
 export interface ThemedCelebrationProps {
@@ -38,7 +38,7 @@ export function ThemedCelebration({ tier, amount, theme, surfaceRef }: ThemedCel
     return <JackpotOverlay amount={amount} theme={theme} onDismiss={onDismiss} />;
   }
   if (tier === 'small' && amount !== null) {
-    return <SmallWinBanner amount={amount} theme={theme} onDismiss={onDismiss} />;
+    return <SmallWinCard amount={amount} theme={theme} onDismiss={onDismiss} />;
   }
   if (tier === 'loss') {
     return <LossPlate theme={theme} surfaceRef={surfaceRef} onDismiss={onDismiss} />;
