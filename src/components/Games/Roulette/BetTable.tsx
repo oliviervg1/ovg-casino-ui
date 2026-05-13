@@ -35,7 +35,7 @@ export function BetTable({ bet, betType, onSelect, disabled }: BetTableProps) {
               data-active={isActive ? 'true' : 'false'}
               onClick={() => onSelect(type)}
               disabled={disabled}
-              className={`relative py-[2vh] rounded-lg text-[2vh] md:text-[2.5vh] uppercase font-bold tracking-wider text-white transition-all duration-200 ${BET_CELL_TREATMENT[type]} ${
+              className={`relative py-[2vh] px-[1vh] rounded-lg text-[1.7vh] md:text-[2vh] uppercase font-bold text-white transition-all duration-200 ${BET_CELL_TREATMENT[type]} ${
                 isActive
                   ? 'ring-[0.4vh] ring-yellow-400 scale-105 shadow-[0_0_20px_rgba(255,255,255,0.3)]'
                   : 'opacity-90 hover:opacity-100 hover:scale-[1.02]'
