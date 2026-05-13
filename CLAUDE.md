@@ -32,12 +32,12 @@ Every image/audio key has up to two GCS objects:
 
 | Path | Created by | Cache-Control | Visibility |
 |---|---|---|---|
-| `assets/v1/global/<key>.png` | First user's GET miss | `public, immutable` | Everyone (GET fallback) |
-| `assets/v1/users/<uid>/<key>.png` | That user's POST `/regenerate` | `private, immutable` | Only `<uid>` (preferred over global on GET) |
+| `assets/v2/global/<key>.png` | First user's GET miss | `public, immutable` | Everyone (GET fallback) |
+| `assets/v2/users/<uid>/<key>.png` | That user's POST `/regenerate` | `private, immutable` | Only `<uid>` (preferred over global on GET) |
 
 Music is identical with `music/v1/...` and `.wav`. Browsers always receive 1-hour V4 signed URLs — the bucket is private with uniform bucket-level access; nothing is publicly readable. Bandwidth flows browser ↔ GCS directly; Cloud Run is not a proxy.
 
-Cache invalidation is by prefix bump: change `v1` → `v2` in `server/routes/{asset,music}.ts` to make every old object unreachable in one deploy. Old objects linger in GCS until you `gcloud storage rm` them or add a lifecycle rule.
+Cache invalidation is by prefix bump (currently `v2` for assets, `v1` for music — they version independently): increment the version in `server/routes/{asset,music}.ts` to make every old object unreachable in one deploy. Old objects linger in GCS until you `gcloud storage rm` them or add a lifecycle rule.
 
 `server/lib/cache.ts` coalesces concurrent same-key generations on a single instance via an in-memory `inFlight` Map. Cross-instance dedup is bounded by GCS HEAD-on-arrival — acceptable for the prototype.
 
@@ -65,7 +65,9 @@ Both error classes live in `src/lib/errors.ts` and are re-exported from both `As
 
 ### Server-side prompts are the keyspace
 
-`server/lib/prompts.ts` defines `ASSET_PROMPTS` and `MUSIC_PROMPTS` as static maps. Routes validate `:key` (and `:theme/:gameType`) with `Object.prototype.hasOwnProperty.call(map, key)` — the `.call` form is intentional, to avoid `__proto__` lookup abuse. **No user-supplied text ever reaches Gemini.** Object names (`assets/v1/users/<uid>/<key>.png`) are safe by construction: `<uid>` is from a verified Firebase token; `<key>` is from a closed map.
+`server/lib/prompts.ts` defines `ASSET_PROMPTS` and `MUSIC_PROMPTS` as static maps. Routes validate `:key` (and `:theme/:gameType`) with `Object.prototype.hasOwnProperty.call(map, key)` — the `.call` form is intentional, to avoid `__proto__` lookup abuse. **No user-supplied text ever reaches Gemini.** Object names (`assets/v2/users/<uid>/<key>.png`) are safe by construction: `<uid>` is from a verified Firebase token; `<key>` is from a closed map.
+
+Character/scene prompts (the 24 game-pictograms, the 24 backgrounds, and `bg_main`) all have a shared `NO_UI_SUFFIX` const concatenated to them. The suffix instructs Gemini to render an "animation production art" scene with no on-screen text overlays / credit balances / jackpot displays / button labels / HUD chrome. This counters Gemini's tendency to render screenshot-style game UIs (with AI-typo'd text) when prompted with verbs like "playing slot machine". Symbol prompts (`<theme>_1..4`) don't need the suffix — they render isolated objects on dark backgrounds. Music prompts don't need it — they're audio.
 
 ### Adding a theme = touch seven places
 
@@ -77,7 +79,7 @@ Themes appear in seven locations and missing one silently breaks the new theme (
 4. **`src/index.css`** — two additions:
    - In the `@theme {}` block at the top: `--font-<theme>: "FontName", "Inter", <fallback>;` (Tailwind v4 auto-generates the `font-<theme>` utility class from this).
    - At the bottom: a `:root[data-theme="<name>"] { ... }` rule with all six per-theme color variables (`--theme-bg`, `--theme-bg-rgb`, `--theme-card`, `--theme-primary`, `--theme-secondary`, `--theme-accent`, `--theme-text`).
-5. **`server/lib/prompts.ts`** — add 10 `ASSET_PROMPTS` keys (3 game pictograms + 4 symbols + 3 backgrounds) and 3 `MUSIC_PROMPTS` keys.
+5. **`server/lib/prompts.ts`** — add 10 `ASSET_PROMPTS` keys (3 game pictograms + 4 symbols + 3 backgrounds) and 3 `MUSIC_PROMPTS` keys. Append `+ NO_UI_SUFFIX` to the 6 character/scene prompts (3 game pictograms + 3 backgrounds); leave the 4 symbol prompts and the music prompts without it.
 6. **`src/components/Games/Slots.tsx`** — add 4 emoji to `FALLBACK_SYMBOLS_MAP` (rendered while symbol assets load).
 7. **`src/config/games.ts`** — add 3 entries to `GAME_REGISTRY` (one each for roulette / slots / bingo) so the games are routable from `/game/:gameId`.
 

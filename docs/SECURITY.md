@@ -25,7 +25,7 @@ Short threat-model summary. Not a comprehensive audit.
 ## SSRF / prompt injection
 
 - The server-side prompts (`ASSET_PROMPTS`, `MUSIC_PROMPTS`) are static, defined in `server/lib/prompts.ts`. **No user-supplied text ever reaches Gemini.** Routes validate `:key` / `:theme/:gameType` against `Object.prototype.hasOwnProperty.call(...)` of the prompt maps (using `hasOwnProperty.call` to avoid `__proto__`-style abuse) and reject unknown values with 400.
-- Object-name construction (`assets/v1/users/<uid>/<key>.png`) is safe: `<uid>` comes from a Firebase-verified ID token; `<key>` is constrained to the static prompt-map keyspace. No path-traversal vector.
+- Object-name construction (`assets/v2/users/<uid>/<key>.png`) is safe: `<uid>` comes from a Firebase-verified ID token; `<key>` is constrained to the static prompt-map keyspace. No path-traversal vector.
 
 ## HTTP headers
 

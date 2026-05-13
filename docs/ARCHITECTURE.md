@@ -9,8 +9,8 @@ OVG Casino is a single-tenant Cloud Run service. The runtime container serves bo
 1. Browser sends request with `X-Firebase-Token: <Firebase-ID-token>` (Cloud Shell's web-preview reverse proxy intercepts `Authorization: Bearer` headers and redirects them to its JWT auth flow; the server still accepts both for ad-hoc curl/testing).
 2. `verifyFirebaseToken` middleware decodes the token via `firebase-admin`. Sets `req.uid`. 401 on invalid/expired/missing.
 3. Route handler validates `:key` against `Object.keys(ASSET_PROMPTS)`. 400 on unknown.
-4. **Shadow lookup:** HEAD `assets/v1/users/<uid>/<key>.png` in GCS. If exists, sign and return — no rate-limit token consumed.
-5. **Global fallback:** `readOrGenerateGlobal(assets/v1/global/<key>.png)`:
+4. **Shadow lookup:** HEAD `assets/v2/users/<uid>/<key>.png` in GCS. If exists, sign and return — no rate-limit token consumed.
+5. **Global fallback:** `readOrGenerateGlobal(assets/v2/global/<key>.png)`:
    - HEAD; if exists, sign and return — no rate-limit token consumed.
    - Else, acquire per-key in-memory lock. Coalesces concurrent same-key requests on this instance.
    - `consumeGenerationToken(uid, RATE_LIMIT_RPM)` — throws `GenerationRateLimitError` (→ 429) if the per-uid 30/min generation budget is exhausted.
@@ -26,7 +26,7 @@ The browser fetches the asset bytes directly from GCS via the signed URL. Bandwi
 2. `regenLimit` middleware: read-modify-write `regen_quota/<uid>` Firestore document keyed on today's UTC date. If counter `>= REGEN_RATE_LIMIT_PER_DAY` (default 200), reject with 429. Otherwise increment and continue.
 3. Route validates `:key`.
 4. `consumeGenerationToken(uid, RATE_LIMIT_RPM)` — same per-minute budget shared with cache-miss GETs; throws → 429 on overage.
-5. `regenerateShadow(assets/v1/users/<uid>/<key>.png)`: always invokes the generator, uploads to the user-shadow path with `Cache-Control: private, max-age=31536000, immutable`.
+5. `regenerateShadow(assets/v2/users/<uid>/<key>.png)`: always invokes the generator, uploads to the user-shadow path with `Cache-Control: private, max-age=31536000, immutable`.
 5. Respond `200 { url, expiresAt }`.
 
 The user's next GET will see the shadow object and serve from there. Other users are unaffected.
@@ -35,10 +35,10 @@ The user's next GET will see the shadow object and serve from there. Other users
 
 | Object | Created by | Cache-Control | Visible to |
 |---|---|---|---|
-| `assets/v1/global/<key>.png` | First user's GET miss | `public, immutable` | Everyone (via GET fallback) |
-| `assets/v1/users/<uid>/<key>.png` | This user's POST regen | `private, immutable` | Only `<uid>` (preferred over global on GET) |
+| `assets/v2/global/<key>.png` | First user's GET miss | `public, immutable` | Everyone (via GET fallback) |
+| `assets/v2/users/<uid>/<key>.png` | This user's POST regen | `private, immutable` | Only `<uid>` (preferred over global on GET) |
 
-To invalidate everything (e.g., after a prompt change): bump `v1` → `v2` in code. Old `v1/users/...` objects linger in GCS but become unreachable; clean up with `gcloud storage rm` or a lifecycle rule if desired.
+To invalidate everything (e.g., after a prompt change): bump the prefix version in `server/routes/asset.ts` (currently `v2`) or `server/routes/music.ts` (currently `v1`). The asset and music versions tick independently. Old objects linger in GCS but become unreachable; clean up with `gcloud storage rm` or a lifecycle rule if desired.
 
 ## State map
 
@@ -81,7 +81,7 @@ The two error classes are shared via `src/lib/errors.ts` so `instanceof` works r
 
 ## Operator: refreshing global assets
 
-`POST /regenerate` only touches a user's shadow path. If the first user's GET miss baked a poor-quality global asset into `assets/v1/global/<key>.png`, every NEW user keeps seeing it until you intervene. Two operator workflows:
+`POST /regenerate` only touches a user's shadow path. If the first user's GET miss baked a poor-quality global asset into `assets/v2/global/<key>.png`, every NEW user keeps seeing it until you intervene. Two operator workflows:
 
-- **Delete and let the next GET re-warm:** `gcloud storage rm gs://<bucket>/assets/v1/global/<key>.png` (or the music equivalent under `music/v1/global/<key>.wav`). The next GET cache-misses → `readOrGenerateGlobal` → fresh upload.
-- **Bump the prefix version** in `server/routes/{asset,music}.ts` (`v1` → `v2`) and redeploy. Old objects linger in GCS but become unreachable. Add a GCS lifecycle rule to garbage-collect them if you care.
+- **Delete and let the next GET re-warm:** `gcloud storage rm gs://<bucket>/assets/v2/global/<key>.png` (or the music equivalent under `music/v1/global/<key>.wav`). The next GET cache-misses → `readOrGenerateGlobal` → fresh upload.
+- **Bump the prefix version** in `server/routes/{asset,music}.ts` (assets currently at `v2`, music at `v1` — increment the relevant one) and redeploy. Old objects linger in GCS but become unreachable. Add a GCS lifecycle rule to garbage-collect them if you care.
