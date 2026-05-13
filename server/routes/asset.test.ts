@@ -68,7 +68,7 @@ describe('assets route', () => {
     const res = await request(app).get('/api/asset/roulette_sweets').set('x-test-uid', 'u-alice');
     expect(res.status).toBe(200);
     expect(res.body.url).toBe('https://signed/shadow');
-    expect(headObject).toHaveBeenCalledWith('assets/v1/users/u-alice/roulette_sweets.png');
+    expect(headObject).toHaveBeenCalledWith('assets/v2/users/u-alice/roulette_sweets.png');
     expect(generateImage).not.toHaveBeenCalled();
   });
 
@@ -83,7 +83,7 @@ describe('assets route', () => {
     expect(res.body.url).toBe('https://signed/global');
     expect(generateImage).toHaveBeenCalledOnce();
     expect(uploadObject).toHaveBeenCalledWith(
-      'assets/v1/global/roulette_sweets.png',
+      'assets/v2/global/roulette_sweets.png',
       Buffer.from('img'),
       'image/png',
       'public, max-age=31536000, immutable',
@@ -109,7 +109,7 @@ describe('assets route', () => {
     expect(res.body.url).toBe('https://signed/u1-shadow');
     expect(generateImage).toHaveBeenCalledOnce();
     expect(uploadObject).toHaveBeenCalledWith(
-      'assets/v1/users/u1/roulette_sweets.png',
+      'assets/v2/users/u1/roulette_sweets.png',
       Buffer.from('rolled'),
       'image/png',
       'private, max-age=31536000, immutable',
@@ -130,13 +130,13 @@ describe('assets route', () => {
     expect(r1.body.url).toBe('https://signed/alice');
     expect(r2.body.url).toBe('https://signed/bob');
     expect(uploadObject).toHaveBeenNthCalledWith(1,
-      'assets/v1/users/alice/roulette_sweets.png',
+      'assets/v2/users/alice/roulette_sweets.png',
       Buffer.from('alice'),
       'image/png',
       'private, max-age=31536000, immutable',
     );
     expect(uploadObject).toHaveBeenNthCalledWith(2,
-      'assets/v1/users/bob/roulette_sweets.png',
+      'assets/v2/users/bob/roulette_sweets.png',
       Buffer.from('bob'),
       'image/png',
       'private, max-age=31536000, immutable',

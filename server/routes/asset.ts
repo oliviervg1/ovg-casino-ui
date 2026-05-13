@@ -25,8 +25,8 @@ export function createAssetRouter() {
         return;
       }
       const uid = req.uid!;
-      const shadowName = `assets/v1/users/${uid}/${key}.png`;
-      const globalName = `assets/v1/global/${key}.png`;
+      const shadowName = `assets/v2/users/${uid}/${key}.png`;
+      const globalName = `assets/v2/global/${key}.png`;
 
       if (await storage.headObject(shadowName)) {
         const url = await storage.signUrl(shadowName, config.signedUrlTtlSec);
@@ -60,7 +60,7 @@ export function createAssetRouter() {
         return;
       }
       const uid = req.uid!;
-      const shadowName = `assets/v1/users/${uid}/${key}.png`;
+      const shadowName = `assets/v2/users/${uid}/${key}.png`;
       const url = await regenerateShadow({
         storage,
         objectName: shadowName,
