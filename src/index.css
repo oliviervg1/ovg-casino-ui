@@ -137,6 +137,15 @@
     --theme-accent: #fde68a;
     --theme-text: #fde68a;
   }
+  :root[data-theme="lobby"] {
+    --theme-bg: #0a0a0a;
+    --theme-bg-rgb: 10, 10, 10;
+    --theme-card: rgba(24, 24, 27, 0.75);  /* zinc-900 @ 75% */
+    --theme-primary: #a78bfa;              /* violet-400 — accent / borders */
+    --theme-secondary: #7c3aed;            /* violet-600 */
+    --theme-accent: #c4b5fd;               /* violet-300 — highlights */
+    --theme-text: #fafafa;
+  }
 
   body {
     background-color: var(--theme-bg);

@@ -17,14 +17,12 @@ import { Slots } from './components/Games/Slots';
 import { Bingo } from './components/Games/Bingo';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAssets } from './hooks/useAssets';
-import { getGameById, GAME_REGISTRY } from './config/games';
-import { THEME_NAMES, type ThemeType } from './utils/themeManifesto';
+import { getGameById } from './config/games';
+import { routeToTheme } from './utils/routeTheme';
 import { WorldPage } from './components/WorldPage';
 import { AppHeader } from './components/Layout/AppHeader';
 import { AudioControlsProvider } from './contexts/AudioControlsContext';
 import { CelebrationProvider } from './contexts/CelebrationContext';
-
-export type { ThemeType } from './utils/themeManifesto';
 
 function GameRouteWrapper() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -68,19 +66,11 @@ function AppContent() {
     checkKey();
   }, []);
 
-  // The body theme tracks the current game's theme on game pages, so the
-  // per-theme CSS custom properties (sweets / egypt / space / …) apply.
-  // On non-game routes (lobby, profile, etc.) we fall back to a neutral
-  // default so the page chrome still has theme tokens to read.
-  let currentTheme: ThemeType = 'sweets';
-  const gameMatch = location.pathname.match(/^\/game\/(.+)$/);
-  const worldMatch = location.pathname.match(/^\/world\/(.+)$/);
-  if (gameMatch) {
-    const gameDef = GAME_REGISTRY.find(g => g.id === gameMatch[1]);
-    if (gameDef) currentTheme = gameDef.theme;
-  } else if (worldMatch && (THEME_NAMES as string[]).includes(worldMatch[1])) {
-    currentTheme = worldMatch[1] as ThemeType;
-  }
+  // The body data-theme tracks the current game's theme on game pages, so
+  // the per-theme CSS custom properties (sweets / egypt / …) apply. On
+  // non-game routes (lobby, profile, FAQ, rules) it resolves to 'lobby' —
+  // the dedicated dark chrome palette defined in src/index.css.
+  const currentTheme = routeToTheme(location.pathname);
   
   const bgKey = 'bg_main';
 

@@ -57,8 +57,8 @@ export function AIPitchStrip({ onRegenerate, isRegenerating, status, error }: AI
         disabled={isRegenerating}
         className="flex items-center gap-2 px-4 py-2 rounded-md font-bold text-sm border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         style={{
-          background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
-          color: '#1a1f2e',
+          background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)',
+          color: '#ffffff',
         }}
       >
         <RefreshCw className={`w-4 h-4 ${isRegenerating ? 'animate-spin' : ''}`} />
