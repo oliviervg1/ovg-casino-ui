@@ -130,9 +130,7 @@ Items the brainstorms explicitly pushed to a future polish-pass plan. Each could
 | Per-theme audio enhancements | Per-theme button click samples, per-reel-stop clicks (Slots), wheel-segment click + ball-drop "thunk" (Roulette), per-cell stamp + BINGO! fanfare (Bingo), themed celebration audio per tier | Medium (audio assets + soundEngine extension) |
 | Per-theme idle motion | `themeManifesto.<theme>.motionIdle` token defined but not wired — sweets jiggle, vampire flicker, space pulse, ninja drift on game widgets | Small-medium (one Framer Motion variant per idle type, applied to surfaces) |
 | Spacing-scale migration | Spec calls for fixed-px grid (4/8/12/16/24/32/48/64) replacing the current vh-based ad-hoc sizing throughout | Large (touches every themed component; risks visual regression unless carefully verified) |
-| CES messenger theme-aware positioning | Spec wants bottom-left on game pages (currently bottom-right everywhere) + themed bubble color | Small (positioning logic + theme-aware color binding) |
 | `prefers-reduced-motion` on wheel rotation | `useMotion` hook respects the pref globally but `RouletteWheel`'s spin animation doesn't honor it | Small (one conditional in spin handler) |
-| Light/dark `profile.theme` reconciliation | User theme preference doesn't fully flow through to all surfaces | Small-medium (audit each surface for theme prop propagation) |
 
 **Recommendation:** if any of these get prioritized, brainstorm each as a separate Plan 7+ rather than a mega-batch. Audio enhancements probably give the biggest perceived-quality gain per hour; bespoke per-theme assets are the biggest visual win but the most expensive.
 
