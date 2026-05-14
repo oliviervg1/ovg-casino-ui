@@ -175,7 +175,13 @@
    confirmed the bug is in CES, not in our position-fixed override. */
 ces-messenger {
   /* Use !important so we win against any inline style the element sets on itself
-     after upgrade. Visual-only — does not affect the element's behaviour. */
+     after upgrade. Visual-only — does not affect the element's behaviour.
+
+     opacity:0 + pointer-events:none hide the CES native bubble. The closed-
+     state launcher is now the themed React <ConciergeLauncher>. The CES host
+     stays mounted so its chat panel still works when the launcher invokes
+     cesm.open(). The .chat-open class below restores opacity + interactivity
+     so the panel becomes visible the moment CES dispatches the open event. */
   position: fixed !important;
   right: 1.25rem !important;
   bottom: 1.25rem !important;
@@ -185,12 +191,111 @@ ces-messenger {
   height: 144px !important;
   overflow: hidden !important;
   transform: translateZ(0) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 ces-messenger.chat-open {
   width: auto !important;
   height: auto !important;
   overflow: visible !important;
   transform: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Themed concierge launcher — replaces the CES native bubble's closed state.
+   Mobile (< 768px): full-width fixed footer flush with the bottom edge.
+   Desktop (>= 768px): floating dialog card pinned bottom-right.
+   Theming pulls live from the page's data-theme variables (--theme-card,
+   --theme-primary, --theme-text, --theme-secondary, --theme-accent), so a
+   new theme's launcher styling needs no additional CSS — only an avatar
+   entry in CONCIERGE_AVATARS. */
+.concierge-launcher {
+  position: fixed;
+  z-index: 55;
+  /* Mobile-first: full-width fixed footer */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--theme-card);
+  backdrop-filter: blur(10px);
+  border: 0;
+  border-top: 1px solid var(--theme-primary);
+  color: var(--theme-text);
+  font-family: var(--font-sans);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.concierge-launcher:hover {
+  background: color-mix(in srgb, var(--theme-card) 88%, white 12%);
+}
+.concierge-launcher:focus-visible {
+  outline: 2px solid var(--theme-accent);
+  outline-offset: 2px;
+}
+.concierge-launcher .concierge-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.concierge-launcher .concierge-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.concierge-launcher .concierge-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+.concierge-launcher .concierge-sub {
+  font-size: 10px;
+  opacity: 0.7;
+  display: none; /* hidden on mobile — surfaced at >= 768px */
+}
+.concierge-launcher .concierge-chev {
+  margin-left: auto;
+  opacity: 0.5;
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  .concierge-launcher {
+    left: auto;
+    right: 1.25rem;
+    bottom: 1.25rem;
+    width: 240px;
+    border-top: none;
+    border: 1px solid var(--theme-primary);
+    border-radius: 14px;
+    padding: 14px 16px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  }
+  .concierge-launcher .concierge-avatar {
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
+  }
+  .concierge-launcher .concierge-title {
+    font-size: 14px;
+  }
+  .concierge-launcher .concierge-sub {
+    display: block;
+  }
+  .concierge-launcher .concierge-chev {
+    display: none;
+  }
 }
 
 @keyframes wiggle-shake {

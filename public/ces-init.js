@@ -7,10 +7,9 @@ if (location.search.includes('no-ces')) {
   document.head.appendChild(diagStyleHide);
 }
 
-window.addEventListener('ces-messenger-loaded', () => {
-  const cesMessenger = document.querySelector('ces-messenger');
-
-  const templateString = `
+// Game-carousel Handlebars template. Compiled once at script load (Handlebars
+// has been loaded synchronously by the prior <script> tag in index.html).
+var GAME_CAROUSEL_TEMPLATE = Handlebars.compile(`
   <style>
     .game-carousel {
       display: flex;
@@ -84,11 +83,29 @@ window.addEventListener('ces-messenger-loaded', () => {
       <a href="{{uri}}" target="_blank" class="play-button">Play Now</a>
     </div>
     {{/each}}
-  </div>`;
+  </div>`);
 
-  const compiledTemplate = Handlebars.compile(templateString);
-  cesMessenger.registerTemplate('game_carousel', compiledTemplate);
-});
+// Register the game_carousel template defensively. There are three windows
+// where registration can be missed:
+//   1. ces-messenger-loaded fires synchronously during the <ces-messenger>
+//      element's upgrade — which runs before this script tag is parsed (the
+//      messenger script + element are above us in index.html). A listener
+//      added below would miss that synchronous emission.
+//   2. clearStorage() / endSession() — called in the chat-close handler
+//      below — may wipe the registered templates inside CES, so the next
+//      open finds nothing registered.
+//   3. ConciergeLauncher.tsx's cesm.open() may skip a code path the bubble's
+//      own click handler would have taken to (re)register internal state.
+// Calling registerTemplate three times (immediately, on load, on each open)
+// is idempotent for the same key and covers all three windows.
+function registerGameCarouselTemplate() {
+  var cesm = document.querySelector('ces-messenger');
+  if (!cesm || typeof cesm.registerTemplate !== 'function') return;
+  cesm.registerTemplate('game_carousel', GAME_CAROUSEL_TEMPLATE);
+}
+
+registerGameCarouselTemplate();
+window.addEventListener('ces-messenger-loaded', registerGameCarouselTemplate);
 
 // Listen for the agent actively ending the session
 window.addEventListener('ces-end-session', (event) => {
@@ -118,6 +135,10 @@ window.addEventListener('ces-chat-open-changed', (event) => {
   if (!cesm) return;
   if (event.detail?.isOpen) {
     cesm.classList.add('chat-open');
+    // Re-register on every open in case the previous close's clearStorage()
+    // wiped CES's internal templates map. registerTemplate is idempotent for
+    // the same key.
+    registerGameCarouselTemplate();
     return;
   }
   cesm.classList.remove('chat-open');
