@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { ConciergeLauncher } from './ConciergeLauncher';
 
@@ -47,5 +47,34 @@ describe('ConciergeLauncher', () => {
     const button = screen.getByRole('button', { name: /talk to concierge/i });
     expect(button.textContent).toMatch(/Talk to concierge/);
     expect(button.textContent).toMatch(/Help, tips, anything/);
+  });
+
+  it('hides the launcher after a ces-chat-open-changed event with isOpen=true', () => {
+    mountCesElement();
+    renderAt('/');
+    expect(screen.getByRole('button', { name: /talk to concierge/i })).toBeTruthy();
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('ces-chat-open-changed', { detail: { isOpen: true } })
+      );
+    });
+    expect(screen.queryByRole('button', { name: /talk to concierge/i })).toBeNull();
+  });
+
+  it('re-renders the launcher after a ces-chat-open-changed event with isOpen=false', () => {
+    mountCesElement();
+    renderAt('/');
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('ces-chat-open-changed', { detail: { isOpen: true } })
+      );
+    });
+    expect(screen.queryByRole('button', { name: /talk to concierge/i })).toBeNull();
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('ces-chat-open-changed', { detail: { isOpen: false } })
+      );
+    });
+    expect(screen.getByRole('button', { name: /talk to concierge/i })).toBeTruthy();
   });
 });

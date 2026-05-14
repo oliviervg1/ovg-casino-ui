@@ -3,12 +3,22 @@ import { createPortal } from 'react-dom';
 
 export function ConciergeLauncher() {
   const [cesAvailable, setCesAvailable] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     setCesAvailable(!!document.querySelector('ces-messenger'));
   }, []);
 
-  if (!cesAvailable) return null;
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ isOpen?: boolean }>).detail;
+      setIsOpen(!!detail?.isOpen);
+    };
+    window.addEventListener('ces-chat-open-changed', handler);
+    return () => window.removeEventListener('ces-chat-open-changed', handler);
+  }, []);
+
+  if (!cesAvailable || isOpen) return null;
 
   return createPortal(
     <button
