@@ -69,9 +69,9 @@ Both error classes live in `src/lib/errors.ts` and are re-exported from both `As
 
 Character/scene prompts (the 24 game-pictograms, the 24 backgrounds, and `bg_main`) all have a shared `NO_UI_SUFFIX` const concatenated to them. The suffix instructs Gemini to render an "animation production art" scene with no on-screen text overlays / credit balances / jackpot displays / button labels / HUD chrome. This counters Gemini's tendency to render screenshot-style game UIs (with AI-typo'd text) when prompted with verbs like "playing slot machine". Symbol prompts (`<theme>_1..4`) don't need the suffix — they render isolated objects on dark backgrounds. Music prompts don't need it — they're audio.
 
-### Adding a theme = touch seven places
+### Adding a theme = touch eight places
 
-Themes appear in seven locations and missing one silently breaks the new theme (404s on the API, doesn't appear in the lobby, slots reels render `❓`, no celebration copy, no themed background). For each new theme add:
+Themes appear in eight locations and missing one silently breaks the new theme (404s on the API, doesn't appear in the lobby, slots reels render `❓`, no celebration copy, no themed background, no concierge avatar). For each new theme add:
 
 1. **`src/utils/themeManifesto.ts`** — extend the `ThemeType` union, append to `THEME_NAMES`, and add a `themeManifesto` map entry. The map carries every per-theme design token: `displayName`, `font` (the tailwind class, e.g. `'font-sweets'`), `surface`, `button`, `border`, `motionIdle`, `celebration`, `skeleton`, `audioClick`, `wiggle: { duration_ms, magnitude_px }`. **This is the source of truth** — `App.tsx` only re-exports `ThemeType` from here.
 2. **`src/utils/themeParticles.ts`** — add to `themeParticles` map: `pool` (6 emoji from the world), `primitives` (subset of `'sparkle' | 'dot' | 'arc'`), `primitiveTint` (CSS color expression, usually `'var(--theme-accent)'`), `motion` (`velocityRange`, `gravity`, `lifetimeMs`, optional `rotation`).
@@ -82,6 +82,7 @@ Themes appear in seven locations and missing one silently breaks the new theme (
 5. **`server/lib/prompts.ts`** — add 10 `ASSET_PROMPTS` keys (3 game pictograms + 4 symbols + 3 backgrounds) and 3 `MUSIC_PROMPTS` keys. Append `+ NO_UI_SUFFIX` to the 6 character/scene prompts (3 game pictograms + 3 backgrounds); leave the 4 symbol prompts and the music prompts without it.
 6. **`src/components/Games/Slots.tsx`** — add 4 emoji to `FALLBACK_SYMBOLS_MAP` (rendered while symbol assets load).
 7. **`src/config/games.ts`** — add 3 entries to `GAME_REGISTRY` (one each for roulette / slots / bingo) so the games are routable from `/game/:gameId`.
+8. **`src/components/ConciergeLauncher.tsx`** — add the new theme key to `CONCIERGE_AVATARS` with a single emoji. The map is `Record<RouteTheme, string>`, so a missing entry is a TypeScript error at build / `npm run lint`.
 
 That's it: `Profile.tsx`'s Regenerate-Assets now derives its work list from `THEME_NAMES` via `useBatchRegenerate.ts` (no manual update needed). `Lobby.tsx` likewise drives `LobbyGrid` from `THEME_NAMES`. If the font in step 4 is from Google Fonts and not yet loaded, also add it to the `<link>` in `index.html`.
 
