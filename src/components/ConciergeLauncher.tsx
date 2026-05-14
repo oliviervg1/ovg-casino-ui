@@ -15,6 +15,18 @@ const CONCIERGE_AVATARS: Record<RouteTheme, string> = {
   ninja: '🥷',
 };
 
+type CesMessengerEl = HTMLElement & { open?: () => void };
+
+function openCesPanel() {
+  const cesm = document.querySelector('ces-messenger') as CesMessengerEl | null;
+  if (!cesm) return;
+  if (typeof cesm.open === 'function') {
+    cesm.open();
+  } else {
+    cesm.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  }
+}
+
 export function ConciergeLauncher() {
   const [cesAvailable, setCesAvailable] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -42,6 +54,7 @@ export function ConciergeLauncher() {
     <button
       type="button"
       aria-label="Talk to concierge"
+      onClick={openCesPanel}
       className="concierge-launcher"
     >
       <span className="concierge-avatar" aria-hidden="true">{avatar}</span>

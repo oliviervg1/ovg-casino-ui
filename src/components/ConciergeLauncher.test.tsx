@@ -1,5 +1,5 @@
-import { describe, it, expect, afterEach } from 'vitest';
-import { cleanup, render, screen, act } from '@testing-library/react';
+import { describe, it, expect, afterEach, vi } from 'vitest';
+import { cleanup, render, screen, act, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { ConciergeLauncher } from './ConciergeLauncher';
 
@@ -99,6 +99,27 @@ describe('ConciergeLauncher', () => {
       const button = screen.getByRole('button', { name: /talk to concierge/i });
       const avatar = button.querySelector('.concierge-avatar');
       expect(avatar?.textContent).toBe(expectedAvatar);
+    });
+  });
+
+  describe('click behavior', () => {
+    it('invokes cesm.open() when the method is present', () => {
+      const open = vi.fn();
+      mountCesElement({ open });
+      renderAt('/');
+      fireEvent.click(screen.getByRole('button', { name: /talk to concierge/i }));
+      expect(open).toHaveBeenCalledTimes(1);
+    });
+
+    it('dispatches a click MouseEvent on cesm when open() is absent', () => {
+      const cesm = mountCesElement();
+      const dispatch = vi.spyOn(cesm, 'dispatchEvent');
+      renderAt('/');
+      fireEvent.click(screen.getByRole('button', { name: /talk to concierge/i }));
+      const calls = dispatch.mock.calls.filter(
+        ([e]) => e instanceof MouseEvent && e.type === 'click'
+      );
+      expect(calls.length).toBe(1);
     });
   });
 });
