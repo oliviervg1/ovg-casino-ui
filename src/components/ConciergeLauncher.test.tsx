@@ -108,6 +108,22 @@ describe('ConciergeLauncher', () => {
     expect(screen.queryByRole('button', { name: /talk to concierge/i })).toBeNull();
   });
 
+  it('appears after a ces-messenger-loaded event when the element was missing at mount', () => {
+    // Simulate the race: React mounts before <ces-messenger> exists in the DOM.
+    renderAt('/');
+    expect(screen.queryByRole('button', { name: /talk to concierge/i })).toBeNull();
+
+    // The custom-element upgrade lands later (typical for an async script
+    // from gstatic.com). We mirror that by inserting the element + dispatching
+    // the load event the messenger emits at the end of upgrade.
+    mountCesElement();
+    act(() => {
+      window.dispatchEvent(new Event('ces-messenger-loaded'));
+    });
+
+    expect(screen.getByRole('button', { name: /talk to concierge/i })).toBeTruthy();
+  });
+
   describe('click behavior', () => {
     it('invokes cesm.open() when the method is present', () => {
       const open = vi.fn();

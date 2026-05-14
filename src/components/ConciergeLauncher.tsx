@@ -33,14 +33,24 @@ export function ConciergeLauncher() {
   const location = useLocation();
 
   useEffect(() => {
-    const cesm = document.querySelector('ces-messenger');
-    if (!cesm) {
-      setCesAvailable(false);
-      return;
-    }
-    // ?no-ces=1 in public/ces-init.js sets display:none on the host. Honour it
-    // so the diagnostic continues to hide the entire concierge surface.
-    setCesAvailable(getComputedStyle(cesm).display !== 'none');
+    const recheck = () => {
+      const cesm = document.querySelector('ces-messenger');
+      if (!cesm) {
+        setCesAvailable(false);
+        return;
+      }
+      // ?no-ces=1 in public/ces-init.js sets display:none on the host. Honour
+      // it so the diagnostic continues to hide the entire concierge surface.
+      setCesAvailable(getComputedStyle(cesm).display !== 'none');
+    };
+    recheck();
+    // Re-check on ces-messenger-loaded too: handles the race where React
+    // mounts before the custom-element upgrade attaches cesm.open (the CES
+    // script loads async from gstatic.com), and any case where ?no-ces=1 or
+    // a similar mid-session toggle changes the host's visibility after our
+    // first check.
+    window.addEventListener('ces-messenger-loaded', recheck);
+    return () => window.removeEventListener('ces-messenger-loaded', recheck);
   }, []);
 
   useEffect(() => {
