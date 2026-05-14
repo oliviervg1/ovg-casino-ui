@@ -21,6 +21,7 @@ import { getGameById } from './config/games';
 import { routeToTheme } from './utils/routeTheme';
 import { WorldPage } from './components/WorldPage';
 import { AppHeader } from './components/Layout/AppHeader';
+import { ConciergeLauncher } from './components/ConciergeLauncher';
 import { AudioControlsProvider } from './contexts/AudioControlsContext';
 import { CelebrationProvider } from './contexts/CelebrationContext';
 
@@ -173,8 +174,9 @@ function AppContent() {
         </div>
       )}
       <AppHeader profile={profile} onLogout={logout} />
+      <ConciergeLauncher />
 
-      <main className="w-full mx-auto p-4 md:p-8 relative z-10 flex-1 flex flex-col overflow-y-auto">
+      <main className="w-full mx-auto p-4 md:p-8 pb-20 md:pb-8 relative z-10 flex-1 flex flex-col overflow-y-auto">
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
             <Route path="/" element={
