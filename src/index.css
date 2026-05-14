@@ -171,8 +171,10 @@
    normal hit-testing. The .chat-open class (toggled in public/ces-init.js
    off the ces-chat-open-changed event the widget already dispatches)
    removes the constraint so the chat panel can expand normally on tap.
-   Verified necessary in commits 826fcf0, b7c208a, 29bfb43; ?natural-ces=1
-   confirmed the bug is in CES, not in our position-fixed override. */
+   Verified necessary in commits 826fcf0, b7c208a, 29bfb43; the bug was
+   originally diagnosed via a `?natural-ces=1` URL flag (removed in ffc5c93
+   once the diagnosis stuck). The full bug report is at
+   docs/CES-MESSENGER-BUG.md. */
 ces-messenger {
   /* Use !important so we win against any inline style the element sets on itself
      after upgrade. Visual-only — does not affect the element's behaviour.
