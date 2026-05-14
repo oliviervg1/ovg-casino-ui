@@ -77,4 +77,28 @@ describe('ConciergeLauncher', () => {
     });
     expect(screen.getByRole('button', { name: /talk to concierge/i })).toBeTruthy();
   });
+
+  describe('theme-specific avatar', () => {
+    const cases: Array<[string, string, string]> = [
+      // route, expected avatar, theme name
+      ['/',                  '✨', 'lobby'],
+      ['/profile',           '✨', 'lobby'],
+      ['/world/sweets',      '🍭', 'sweets'],
+      ['/world/egypt',       '𓂀', 'egypt'],
+      ['/world/space',       '🚀', 'space'],
+      ['/world/west',        '🤠', 'west'],
+      ['/world/ocean',       '🐚', 'ocean'],
+      ['/world/jungle',      '🌿', 'jungle'],
+      ['/world/vampire',     '🦇', 'vampire'],
+      ['/world/ninja',       '🥷', 'ninja'],
+    ];
+
+    it.each(cases)('renders %s with the %s avatar (%s)', (route, expectedAvatar) => {
+      mountCesElement();
+      renderAt(route);
+      const button = screen.getByRole('button', { name: /talk to concierge/i });
+      const avatar = button.querySelector('.concierge-avatar');
+      expect(avatar?.textContent).toBe(expectedAvatar);
+    });
+  });
 });
