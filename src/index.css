@@ -175,7 +175,13 @@
    confirmed the bug is in CES, not in our position-fixed override. */
 ces-messenger {
   /* Use !important so we win against any inline style the element sets on itself
-     after upgrade. Visual-only — does not affect the element's behaviour. */
+     after upgrade. Visual-only — does not affect the element's behaviour.
+
+     opacity:0 + pointer-events:none hide the CES native bubble. The closed-
+     state launcher is now the themed React <ConciergeLauncher>. The CES host
+     stays mounted so its chat panel still works when the launcher invokes
+     cesm.open(). The .chat-open class below restores opacity + interactivity
+     so the panel becomes visible the moment CES dispatches the open event. */
   position: fixed !important;
   right: 1.25rem !important;
   bottom: 1.25rem !important;
@@ -185,12 +191,16 @@ ces-messenger {
   height: 144px !important;
   overflow: hidden !important;
   transform: translateZ(0) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 ces-messenger.chat-open {
   width: auto !important;
   height: auto !important;
   overflow: visible !important;
   transform: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 /* Themed concierge launcher — replaces the CES native bubble's closed state.
