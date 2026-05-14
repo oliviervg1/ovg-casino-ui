@@ -27,6 +27,11 @@ afterEach(() => {
   document.querySelectorAll('ces-messenger').forEach((el) => el.remove());
 });
 
+// Helper used in Tasks 2-6; this no-op reference keeps `noUnusedLocals` quiet
+// for Task 1's isolated commit. Task 2's test usage makes this line redundant
+// and it can be removed then.
+void mountCesElement;
+
 describe('ConciergeLauncher', () => {
   it('renders nothing when no <ces-messenger> is in the document', () => {
     renderAt('/');
