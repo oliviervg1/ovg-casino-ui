@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 import { routeToTheme, type RouteTheme } from '../utils/routeTheme';
+import type { CesMessengerEl } from '../types/cesMessenger';
 
 const CONCIERGE_AVATARS: Record<RouteTheme, string> = {
   lobby: '✨',
@@ -14,8 +15,6 @@ const CONCIERGE_AVATARS: Record<RouteTheme, string> = {
   vampire: '🦇',
   ninja: '🥷',
 };
-
-type CesMessengerEl = HTMLElement & { open?: () => void };
 
 function openCesPanel() {
   const cesm = document.querySelector('ces-messenger') as CesMessengerEl | null;

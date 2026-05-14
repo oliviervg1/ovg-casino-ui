@@ -24,6 +24,7 @@ import { AppHeader } from './components/Layout/AppHeader';
 import { ConciergeLauncher } from './components/ConciergeLauncher';
 import { AudioControlsProvider } from './contexts/AudioControlsContext';
 import { CelebrationProvider } from './contexts/CelebrationContext';
+import type { CesMessengerEl } from './types/cesMessenger';
 
 function GameRouteWrapper() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -87,7 +88,7 @@ function AppContent() {
 
   // Sync user profile name with CES Messenger
   useEffect(() => {
-    const cesm = document.querySelector('ces-messenger') as any;
+    const cesm = document.querySelector('ces-messenger') as CesMessengerEl | null;
     if (!cesm || !profile?.displayName) return;
 
     const firstName = profile.displayName.split(' ')[0];
