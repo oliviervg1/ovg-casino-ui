@@ -102,6 +102,12 @@ describe('ConciergeLauncher', () => {
     });
   });
 
+  it('renders nothing when <ces-messenger> is in the document but display:none', () => {
+    mountCesElement({ display: 'none' });
+    renderAt('/');
+    expect(screen.queryByRole('button', { name: /talk to concierge/i })).toBeNull();
+  });
+
   describe('click behavior', () => {
     it('invokes cesm.open() when the method is present', () => {
       const open = vi.fn();

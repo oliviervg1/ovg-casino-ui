@@ -33,7 +33,14 @@ export function ConciergeLauncher() {
   const location = useLocation();
 
   useEffect(() => {
-    setCesAvailable(!!document.querySelector('ces-messenger'));
+    const cesm = document.querySelector('ces-messenger');
+    if (!cesm) {
+      setCesAvailable(false);
+      return;
+    }
+    // ?no-ces=1 in public/ces-init.js sets display:none on the host. Honour it
+    // so the diagnostic continues to hide the entire concierge surface.
+    setCesAvailable(getComputedStyle(cesm).display !== 'none');
   }, []);
 
   useEffect(() => {
